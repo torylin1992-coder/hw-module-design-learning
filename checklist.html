@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>硬件设计评审清单 — 56 条上板前必查项 | HW Module Design Learning</title>
+<meta name="description" content="一份可直接使用的硬件设计评审清单：电源与上电、数字最小系统、接口与通信、模拟与采样、PCB 与 EMC、可制造性六大类共 56 条检查项，支持勾选记录与打印。">
+<meta name="keywords" content="硬件设计评审,原理图评审,PCB检查表,design review checklist,硬件 checklist,上电检查,EMC检查">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://torylin1992-coder.github.io/hw-module-design-learning/checklist.html">
+<meta property="og:url" content="https://torylin1992-coder.github.io/hw-module-design-learning/checklist.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="HW Module Design Learning">
+<meta property="og:title" content="硬件设计评审清单 — 56 条上板前必查项">
+<meta property="og:description" content="电源、数字、接口、模拟、PCB/EMC、可制造性六大类检查项，勾选即存本地。">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231550e8'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='13' font-weight='bold' fill='white' text-anchor='middle'%3EHW%3C/text%3E%3C/svg%3E">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "硬件设计评审清单",
+  "description": "电源与上电、数字最小系统、接口与通信、模拟与采样、PCB 与 EMC、可制造性六大类共 56 条硬件设计检查项。",
+  "inLanguage": "zh-CN",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "HW Module Design Learning"
+  }
+}
+</script>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true">HW</span>
+      <span>HW Module Design Learning<small>硬件模块设计学习</small></span>
+    </a>
+    <nav class="nav" aria-label="主导航">
+      <a href="index.html">首页</a>
+      <a href="modules.html">模块手册</a>
+      <a href="checklist.html" aria-current="page">评审清单</a>
+      <a href="calculators.html">工程计算器</a>
+      <a href="faq.html">调试问答</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+  <nav class="breadcrumb" aria-label="面包屑"><a href="index.html">首页</a><span>/</span>评审清单</nav>
+  <div class="page-head">
+    <h1>硬件设计评审清单</h1>
+    <p>投板前逐条过一遍，比投板后改一版省两周。勾选状态保存在本机浏览器里，关掉页面也不会丢；需要归档时直接打印。</p>
+  </div>
+</div>
+
+<div class="wrap" style="padding-bottom:20px">
+
+<div class="chk-bar" role="group" aria-label="完成进度">
+  <div class="pct" id="pctText">0 / 56 已确认</div>
+  <div class="meter" aria-hidden="true"><i id="pctBar"></i></div>
+  <button class="btn" type="button" id="resetBtn">清空勾选</button>
+  <button class="btn btn-primary" type="button" onclick="window.print()">打印 / 存 PDF</button>
+</div>
+
+<h2 style="font-size:1.05rem;margin:0 0 14px;color:var(--muted);font-family:var(--mono);letter-spacing:.06em">A · 电源与上电</h2>
+<section class="chk-group" aria-labelledby="ga">
+  <header><h2 id="ga">A1 电源树与容量</h2><span class="count">6 项</span></header>
+  <ul class="chk-list">
+    <li><label><input type="checkbox" data-k="a1"><span>画出完整电源树：输入范围、每级输出电压、最大/典型负载电流、效率与总功耗</span></label></li>
+    <li><label><input type="checkbox" data-k="a2"><span>每级电源的最大输出电流 ≥ 该轨实际峰值负载的 1.5 倍</span></label></li>
+    <li><label><input type="checkbox" data-k="a3"><span>LDO 的热耗已核算：(Vin−Vout)×Iout 与 θJA 反推结温，留 20% 余量</span></label></li>
+    <li><label><input type="checkbox" data-k="a4"><span>Buck 的电感 Isat 与 DCR 已确认，纹波电流在 20%–40% Iout</span></label></li>
+    <li><label><input type="checkbox" data-k="a5"><span>输入电容、输出电容的直流偏压降容已考虑（MLCC 有效容值）</span></label></li>
+    <li><label><input type="checkbox" data-k="a6"><span>上电时序已定义：各轨先后顺序、PG 级联、软启动时间</span></label></li>
+  </ul>
+</section>
+
+<section class="chk-group" aria-labelledby="ga2">
+  <header><h2 id="ga2">A2 保护与异常</h2><span class="count">5 项</span></header>
+  <ul class="chk-list">
+    <li><label><input type="checkbox" data-k="a7"><span>输入有反接保护、过压/过流保护，保险丝或 eFuse 规格已核</span></label></li>
+    <li><label><input type="checkbox" data-k="a8"><span>热插拔或浪涌场景有 TVS / 压敏，钳位电压低于后级绝对最大额定</span></label></li>
+    <li><label><input type="checkbox" data-k="a9"><span>掉电检测（BOR/PVD）已启用，掉电时能保存关键数据</span></label></li>
+    <li><label><input type="checkbox" data-k="a10"><span>每路电源都有可测的测试点，且丝印标注电压值</span></label></li>
+    <li><label><input type="checkbox" data-k="a11"><span>空载、满载、短路三种工况下都不会出现自锁或反复重启</span></label></li>
+  </ul>
+</section>
+
+<h2 style="font-size:1.05rem;margin:20px 0 14px;color:var(--muted);font-family:var(--mono);letter-spacing:.06em">B · 数字最小系统</h2>
+<section class="chk-group" aria-labelledby="gb">
+  <header><h2 id="gb">B1 MCU 与配置</h2><span class="count">9 项</span></header>
+  <ul class="chk-list">
+    <li><label><input type="checkbox" data-k="b1"><span>每个 VDD 引脚都有独立 100 nF，位置紧邻引脚且过孔直连地平面</span></label></li>
+    <li><label><input type="checkbox" data-k="b2"><span>VDDA / VREF+ 有单独滤波（磁珠或 LC + 1 µF + 100 nF）</span></label></li>
+    <li><label><input type="checkbox" data-k="b3"><span>复位电路阈值与 RC 时间常数已核对，覆盖电源上升时间</span></label></li>
+    <li><label><input type="checkbox" data-k="b4"><span>BOOT / 启动模式引脚有确定上下拉，不存在悬空</span></label></li>
+    <li><label><input type="checkbox" data-k="b5"><span>调试口已引出（SWDIO / SWCLK / GND / 3V3，建议加 NRST）</span></label></li>
+    <li><label><input type="checkbox" data-k="b6"><span>晶振靠近芯片、走线短、下方禁布、四周包地</span></label></li>
+    <li><label><input type="checkbox" data-k="b7"><span>晶振负载电容按 CL 公式计算，不是照抄参考图</span></label></li>
+    <li><label><input type="checkbox" data-k="b8"><span>未使用引脚按 datasheet 处理（输出低或内部上拉），不浮空</span></label></li>
+    <li><label><input type="checkbox" data-k="b9"><span>所有引脚的绝对最大额定值没有被外部电路超出（含上电/掉电瞬间）</span></label></li>
+  </ul>
+</section>
+
+<h2 style="font-size:1.05rem;margin:20px 0 14px;color:var(--muted);font-family:var(--mono);letter-spacing:.06em">C · 接口与通信</h2>
+<section class="chk-group" aria-labelledby="gc">
+  <header><h2 id="gc">C1 总线与端接</h2><span class="count">9 项</span></header>
+  <ul class="chk-list">
+    <li><label><input type="checkbox" data-k="c1"><span>RS-485 / CAN 的 120 Ω 终端只在总线两个物理末端</span></label></li>
+    <li><label><input type="checkbox" data-k="c2"><span>RS-485 有 fail-safe 偏置，空闲时差分电压 &gt; 200 mV</span></label></li>
+    <li><label><input type="checkbox" data-k="c3"><span>总线收发器共模电压范围覆盖现场实际共模漂移，必要时选隔离型</span></label></li>
+    <li><label><input type="checkbox" data-k="c4"><span>I2C 上拉阻值按总线电容与速率计算，低电平未被抬高</span></label></li>
+    <li><label><input type="checkbox" data-k="c5"><span>SPI 的 CPOL / CPHA 与从设备一致，CS 建立保持时间满足要求</span></label></li>
+    <li><label><input type="checkbox" data-k="c6"><span>差分对等长、紧耦合、无长桩线，未跨越平面分割</span></label></li>
+    <li><label><input type="checkbox" data-k="c7"><span>对外接口的 ESD 器件位置在连接器与芯片之间，先防护后进芯片</span></label></li>
+    <li><label><input type="checkbox" data-k="c8"><span>连接器定义（引脚序、方向、锁扣）已与线束方确认，A/B 不会接反</span></label></li>
+    <li><label><input type="checkbox" data-k="c9"><span>每个通信口都有回环或自测手段，可在整机状态验证通路</span></label></li>
+  </ul>
+</section>
+
+<h2 style="font-size:1.05rem;margin:20px 0 14px;color:var(--muted);font-family:var(--mono);letter-spacing:.06em">D · 模拟与采样</h2>
+<section class="chk-group" aria-labelledby="gd">
+  <header><h2 id="gd">D1 信号链</h2><span class="count">8 项</span></header>
+  <ul class="chk-list">
+    <li><label><input type="checkbox" data-k="d1"><span>输入范围、共模范围与 ADC 量程匹配，超范围时有钳位保护</span></label></li>
+    <li><label><input type="checkbox" data-k="d2"><span>分压/分流电阻精度与温漂已计入误差预算（建议 0.1%）</span></label></li>
+    <li><label><input type="checkbox" data-k="d3"><span>驱动运放带宽 ≥ 10 × 采样率，压摆率满足满量程跳变</span></label></li>
+    <li><label><input type="checkbox" data-k="d4"><span>RC 建立时间小于采样窗口 1/3，高阻源已做缓冲</span></label></li>
+    <li><label><input type="checkbox" data-k="d5"><span>抗混叠滤波器截止频率低于 fs/2</span></label></li>
+    <li><label><input type="checkbox" data-k="d6"><span>基准源噪声、温漂、初始精度已计入绝对精度预算</span></label></li>
+    <li><label><input type="checkbox" data-k="d7"><span>模拟地与数字地单点连接，采样区域下方为完整模拟地</span></label></li>
+    <li><label><input type="checkbox" data-k="d8"><span>小信号走线远离 PWM、开关电源、继电器与时钟线</span></label></li>
+  </ul>
+</section>
+
+<h2 style="font-size:1.05rem;margin:20px 0 14px;color:var(--muted);font-family:var(--mono);letter-spacing:.06em">E · PCB 与 EMC</h2>
+<section class="chk-group" aria-labelledby="ge">
+  <header><h2 id="ge">E1 布局与回流</h2><span class="count">11 项</span></header>
+  <ul class="chk-list">
+    <li><label><input type="checkbox" data-k="e1"><span>层叠已定义，高速信号有完整参考平面，阻抗目标明确</span></label></li>
+    <li><label><input type="checkbox" data-k="e2"><span>关键信号未跨越平面分割，回流路径连续</span></label></li>
+    <li><label><input type="checkbox" data-k="e3"><span>开关电源热回路（输入电容—开关管—电感—地）面积最小</span></label></li>
+    <li><label><input type="checkbox" data-k="e4"><span>去耦电容按“由小到大、由近到远”摆放，先过电容再过孔到引脚</span></label></li>
+    <li><label><input type="checkbox" data-k="e5"><span>晶振、复位、基准、反馈等敏感网络已包地或加保护走线</span></label></li>
+    <li><label><input type="checkbox" data-k="e6"><span>对外线缆接口附近有共模扼流圈 / 滤波，位置贴近连接器</span></label></li>
+    <li><label><input type="checkbox" data-k="e7"><span>ESD 泄放路径短而直，先到防护器件再到被保护芯片</span></label></li>
+    <li><label><input type="checkbox" data-k="e8"><span>功率器件铜箔面积与散热过孔满足热设计，热源远离温度敏感器件</span></label></li>
+    <li><label><input type="checkbox" data-k="e9"><span>板边与安装孔周围留够禁布区，避免与外壳短路</span></label></li>
+    <li><label><input type="checkbox" data-k="e10"><span>丝印标注了版本号、日期、关键电压与接口方向</span></label></li>
+    <li><label><input type="checkbox" data-k="e11"><span>已做 DRC 与 DFM 检查，最小线宽/间距/孔径符合工厂能力</span></label></li>
+  </ul>
+</section>
+
+<h2 style="font-size:1.05rem;margin:20px 0 14px;color:var(--muted);font-family:var(--mono);letter-spacing:.06em">F · 可制造性与交付</h2>
+<section class="chk-group" aria-labelledby="gf">
+  <header><h2 id="gf">F1 量产准备</h2><span class="count">8 项</span></header>
+  <ul class="chk-list">
+    <li><label><input type="checkbox" data-k="f1"><span>BOM 完整：位号、型号、封装、容差、替代料、是否 DNP 都标注清楚</span></label></li>
+    <li><label><input type="checkbox" data-k="f2"><span>关键器件有第二货源或已确认交期</span></label></li>
+    <li><label><input type="checkbox" data-k="f3"><span>有测试点覆盖所有电源轨与关键信号，治具可探</span></label></li>
+    <li><label><input type="checkbox" data-k="f4"><span>烧录接口与烧录流程已定义（含批量烧录治具方案）</span></label></li>
+    <li><label><input type="checkbox" data-k="f5"><span>有出厂自检程序：能自动判断各模块是否正常</span></label></li>
+    <li><label><input type="checkbox" data-k="f6"><span>校准项已定义（基准、电流采样、传感器零点）</span></label></li>
+    <li><label><input type="checkbox" data-k="f7"><span>原理图、PCB、BOM、装配图的版本号一致且已归档</span></label></li>
+    <li><label><input type="checkbox" data-k="f8"><span>首板验证计划已写好：每项测什么、用什么仪器、判据是什么</span></label></li>
+  </ul>
+</section>
+
+<div class="callout" style="margin-top:26px">
+  <span class="ico">!</span>
+  <p>清单不是越长约好。真正有价值的是把<strong>你自己踩过的坑</strong>加进去：每解决一次异常，就回来补一条。半年后这份清单会比任何教程都贴合你的产品。</p>
+</div>
+
+</div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="fgrid">
+      <div>
+        <a class="brand" href="index.html">
+          <span class="brand-mark" aria-hidden="true">HW</span>
+          <span>HW Module Design Learning<small>硬件模块设计学习</small></span>
+        </a>
+        <p>一套面向电子工程师、嵌入式开发者与电子类专业学生的模块化硬件设计学习资料。内容持续更新。</p>
+      </div>
+      <div>
+        <h4>学习</h4>
+        <a href="index.html#path">六阶段学习路径</a>
+        <a href="modules.html">十个典型模块</a>
+        <a href="faq.html">调试问答</a>
+      </div>
+      <div>
+        <h4>工具</h4>
+        <a href="checklist.html">设计评审清单</a>
+        <a href="calculators.html">工程计算器</a>
+        <a href="index.html#path">学习方法</a>
+      </div>
+    </div>
+    <div class="bottom">
+      <span>© 2026 HW Module Design Learning</span>
+      <span>内容供学习参考，实际设计请以器件 datasheet 与相关标准为准</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/app.js" defer></script>
+</body>
+</html>

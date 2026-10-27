@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>硬件调试问答 — 上电无输出 / MCU 不启动 / 通信误码 / ADC 跳动 | HW Module Design Learning</title>
+<meta name="description" content="硬件调试现场最常见的十二个问题与排查顺序：电源无输出、纹波超标、MCU 不启动、复位异常、通信误码、ADC 读数跳动、局部发热、辐射超标、首板调试顺序与判据。">
+<meta name="keywords" content="硬件调试,上电无输出,电源纹波,MCU不启动,复位异常,通信误码,ADC跳动,辐射超标,硬件排故">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://torylin1992-coder.github.io/hw-module-design-learning/faq.html">
+<meta property="og:url" content="https://torylin1992-coder.github.io/hw-module-design-learning/faq.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="HW Module Design Learning">
+<meta property="og:title" content="硬件调试问答 — 十二个高频问题与排查顺序">
+<meta property="og:description" content="按 电—钟—复—口 的顺序定位，不要靠猜：上电无输出、MCU 不启动、通信误码、ADC 跳动、辐射超标的排查顺序与判据。">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231550e8'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='13' font-weight='bold' fill='white' text-anchor='middle'%3EHW%3C/text%3E%3C/svg%3E">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "name": "硬件调试问答",
+  "inLanguage": "zh-CN",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "上电后电源没有输出，第一个该测哪里？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "按顺序测四点：输入电压是否真正到达芯片 VIN 引脚、使能脚 EN 电平是否符合阈值、反馈分压节点电压是否等于内部基准、输出是否对地短路。八成原因是使能被前级限流拉低、EN 悬空、反馈电阻虚焊或输出短路触发保护。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "开关电源纹波超标，如何判断是环路问题还是布局问题？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "空载与满载各测一次。空载纹波就大，多为环路补偿或电感取值不合适；只有满载才变差，多为输入电容不足、地弹或输出电容偏压降容。测量必须使用探头弹簧地环，长地线引入的几十毫伏本身就是假纹波。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "MCU 上电不启动，如何快速定位？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "按「电—钟—复—口」四步：一路一路确认电源电压与纹波；确认晶振起振（用 MCO 输出或频率计，不要用探头直碰晶振脚）；确认复位脚已释放到高电平且没有反复抖动；确认调试器能识别芯片。任何一步不满足就停在那里不要跳步。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "RS-485 通信偶发误码，先怀疑什么？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "先查共模与端接：两端设备是否共地、共模电压是否超出收发器范围、120 Ω 终端是否只在两个物理末端、是否存在多余终端导致负载过重。长线且地电位差大的场合，隔离收发器通常比换线材更有效。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "ADC 读数一直在跳，是芯片坏了吗？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "绝大多数不是。依次检查：基准源是否干净、驱动运放带宽与 RC 建立时间是否足够、模拟地是否被大电流污染、输入分压源阻抗是否过高、是否存在混叠。用示波器看输入端的真实波形，比盯着读数更有用。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "板子局部发热严重，如何判断是否超规格？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "用热像仪读器件表面温度，结合 datasheet 的 θJA 反推结温，再对照降额要求（通常结温不超过最大值的 80%）。不要用摸着烫作为判据，也不要只看表面温度而不算结温。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "辐射发射预测试超标，先改电路还是先改 PCB？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "先定位频点归属：逐个关闭或旁路模块，看超标的窄带频点是否消失。窄带通常来自时钟或开关电源，宽带多来自接口线缆的共模电流。前者改滤波与布局，后者加共模扼流圈、改善接地与屏蔽更有效。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "新板第一次上电应该按什么顺序？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "目视并测电源对地电阻排除短路；用限流电源空载上电看静态电流；逐轨测电压与纹波；测上电时序与 PG；测复位与 BOOT 电平；连调试器读芯片 ID；烧录最小程序；逐模块加负载并测温升；最后做接口回环测试。"
+      }
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true">HW</span>
+      <span>HW Module Design Learning<small>硬件模块设计学习</small></span>
+    </a>
+    <nav class="nav" aria-label="主导航">
+      <a href="index.html">首页</a>
+      <a href="modules.html">模块手册</a>
+      <a href="checklist.html">评审清单</a>
+      <a href="calculators.html">工程计算器</a>
+      <a href="faq.html" aria-current="page">调试问答</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+  <nav class="breadcrumb" aria-label="面包屑"><a href="index.html">首页</a><span>/</span>调试问答</nav>
+  <div class="page-head">
+    <h1>硬件调试问答</h1>
+    <p>调试不是玄学，是缩小范围。每一条都给了排查顺序与判据——先测哪个点、看到什么算正常、不符合时下一步查什么。按顺序走，别靠换器件碰运气。</p>
+  </div>
+</div>
+
+<div class="wrap" style="padding-bottom:56px">
+
+<h2 style="font-size:1.05rem;margin:0 0 14px;color:var(--muted);font-family:var(--mono);letter-spacing:.06em">电源类</h2>
+
+<details class="faq" open>
+  <summary>上电后电源没有输出，第一个该测哪里？</summary>
+  <div class="body">
+    <p>按下面的顺序，测到哪一步不符合就停在那一步：</p>
+    <ul class="ticks">
+      <li><strong>输入电压</strong>：万用表直接量芯片 VIN 引脚与就近的 GND 焊盘，不是量连接器。长线或保险丝压降会让引脚电压明显低于预期。</li>
+      <li><strong>使能脚 EN</strong>：量电平是否达到 datasheet 的使能阈值。EN 悬空、被前级 PG 拉低、上拉电阻虚焊，是最常见的三个原因。</li>
+      <li><strong>反馈节点 FB</strong>：正常工作时应等于内部基准（如 0.6 V / 0.8 V）。为 0 说明反馈下臂开路或短路；偏高说明上臂开路。</li>
+      <li><strong>输出对地电阻</strong>：断电测，接近 0 Ω 说明后级短路，芯片在打嗝保护。</li>
+    </ul>
+    <p>判据：输入到位、EN 有效、FB 等于基准而输出仍为 0，基本可以判定芯片或电感损坏。</p>
+  </div>
+</details>
+
+<details class="faq">
+  <summary>开关电源纹波超标，怎么判断是环路问题还是布局问题？</summary>
+  <div class="body">
+    <p>先做空载与满载对比：</p>
+    <ul class="ticks">
+      <li><strong>空载就大</strong>：多半是环路补偿不当、电感取值偏小、或轻载进入跳周期模式（PFM），属于设计参数问题。</li>
+      <li><strong>只有满载才大</strong>：输入电容不足、输入走线过长引起地弹、输出 MLCC 在偏压下容值不够，属于布局与选型问题。</li>
+      <li><strong>波形上有高频毛刺</strong>：探头地线太长造成的假纹波，换成弹簧地环再看；如果仍在，是 SW 节点振铃耦合到输出。</li>
+    </ul>
+    <p>判据：把探头短接到输出电容的 GND 焊盘上作为“零”参考，毛刺若消失就纯粹是测量方式问题。</p>
+  </div>
+</details>
+
+<details class="faq">
+  <summary>LDO 一加载就掉压，是电流能力不够吗？</summary>
+  <div class="body">
+    <p>先分清是“掉压”还是“过热保护”。测三个量：输入电压在加载瞬间是否被拉低、LDO 输入输出压差是否小于所需 dropout、芯片表面温度是否接近热保护点。</p>
+    <p>输入被拉低说明前级（或线束、保险丝）内阻太大；压差不足说明输入余量不够，需要提高前级电压或换低压差型号；温升过高说明热设计不成立，此时 LDO 会周期性关断，表现为输出“打嗝”。</p>
+  </div>
+</details>
+
+<details class="faq">
+  <summary>上电瞬间后级芯片被烧，哪里出了问题？</summary>
+  <div class="body">
+    <p>典型是上电过冲或时序倒灌。检查三处：电源软启动是否被禁用、输出电容与负载的比值是否过大（空载大电容 + 快速启动会产生过冲）、是否存在 3.3 V 先于 1.8 V 建立导致 IO 倒灌进内核。</p>
+    <p>处理方式：开启软启动、加 PG 级联保证时序、必要时在输出加 TVS 或钳位二极管。上电波形必须实测，不能只看仿真。</p>
+  </div>
+</details>
+
+<h2 style="font-size:1.05rem;margin:26px 0 14px;color:var(--muted);font-family:var(--mono);letter-spacing:.06em">数字与时钟</h2>
+
+<details class="faq">
+  <summary>MCU 不启动，如何快速二分？</summary>
+  <div class="body">
+    <p>固定顺序：<strong>电 → 钟 → 复 → 口</strong>。</p>
+    <ul class="ticks">
+      <li><strong>电</strong>：所有 VDD 引脚电压与纹波；VDDA 是否正常；有无某一路缺失导致内部上电复位一直有效。</li>
+      <li><strong>钟</strong>：晶振是否起振。用 MCO / CLKOUT 引脚输出时钟后测频率，不要用探头直接碰晶振引脚（探头电容会让它停振）。</li>
+      <li><strong>复</strong>：NRST 是否释放到高电平，是否随电源抖动反复复位。</li>
+      <li><strong>口</strong>：调试器能否读到芯片 ID。读不到先查 SWDIO/SWCLK 是否被复用为 GPIO、是否被外部电路拉住、地是否共。</li>
+    </ul>
+    <p>判据：四步都通过而程序仍不跑，再怀疑 BOOT 配置与时钟树配置。</p>
+  </div>
+</details>
+
+<details class="faq">
+  <summary>板子偶尔自动重启，怎么抓？</summary>
+  <div class="body">
+    <p>用示波器长余辉（或单次触发）同时监视电源轨与 NRST，让故障自己触发记录。常见根因有四类：电源瞬态跌落（负载突变、继电器动作）、复位线被干扰耦合、看门狗被饿死、程序跑飞触发硬件异常。</p>
+    <p>如果是看门狗引起，先把喂狗点放到主循环并打时间戳；如果伴随电源跌落，重点查大电流负载的回路与去耦。</p>
+  </div>
+</details>
+
+<details class="faq">
+  <summary>晶振不起振，换晶振有用吗？</summary>
+  <div class="body">
+    <p>先别换。九成是负载电容或布局问题：电容值按 CL 公式计算（C<sub>L</sub> = C1·C2/(C1+C2) + C<sub>stray</sub>），C<sub>stray</sub> 取 3–5 pF；晶振地焊盘必须可靠接地；晶振下方不要走任何信号；负阻抗余量要大于晶振 ESR 的 5 倍。</p>
+    <p>排查顺序：确认焊接与地连接 → 减小负载电容试起振 → 检查是否有并联的杂散电容或测试点 → 最后才怀疑晶振本身。</p>
+  </div>
+</details>
+
+<h2 style="font-size:1.05rem;margin:26px 0 14px;color:var(--muted);font-family:var(--mono);letter-spacing:.06em">通信与接口</h2>
+
+<details class="faq">
+  <summary>RS-485 通信偶发误码，先怀疑什么？</summary>
+  <div class="body">
+    <p>按“端接 → 共模 → 防护 → 速率”的顺序：</p>
+    <ul class="ticks">
+      <li><strong>端接</strong>：120 Ω 只在两个物理末端，中间节点不能加；多余的终端会让总线负载过重、幅度骤降。</li>
+      <li><strong>共模</strong>：两端是否共地，共模电压是否超出收发器 −7 V ~ +12 V 范围。长距离、不同配电回路时要考虑隔离。</li>
+      <li><strong>防护</strong>：TVS 电容是否过大，高速率下会把边沿吃掉。</li>
+      <li><strong>速率</strong>：线长与速率不匹配，先降速验证是不是信号完整性问题。</li>
+    </ul>
+    <p>判据：用差分探头看波形，A/B 幅度应大于 1.5 V，上升沿无台阶与振铃。</p>
+  </div>
+</details>
+
+<details class="faq">
+  <summary>CAN 总线能通信但错误帧很多，查什么？</summary>
+  <div class="body">
+    <p>先看物理层：终端电阻是否为两个 60 Ω 并联等效 60 Ω（CAN 的 split termination 是两个 60 Ω + 中心电容）、总线是否有长桩线、共模电压是否稳定。</p>
+    <p>再看节点：波特率与采样点配置是否全总线一致（不一致会导致间歇性错误帧）、是否有节点未上电却挂在总线上形成隐性负载。</p>
+  </div>
+</details>
+
+<details class="faq">
+  <summary>网口插上灯亮但 ping 不通，从哪查？</summary>
+  <div class="body">
+    <p>灯亮只说明 PHY 建立了 link，不代表数据通路正常。依次确认：MAC 与 PHY 之间的接口时钟（RMII 的 REF_CLK）是否稳定、PHY 的 strap 地址配置是否正确、MDIO 能否读到 PHY 寄存器、MAC 侧是否配置了正确的速率与双工。</p>
+    <p>如果 ping 有丢包但不断，重点看变压器与 MDI 走线；如果完全不通，先读 PHY 的链路状态寄存器判断是物理层还是协议层问题。</p>
+  </div>
+</details>
+
+<h2 style="font-size:1.05rem;margin:26px 0 14px;color:var(--muted);font-family:var(--mono);letter-spacing:.06em">模拟与 EMC</h2>
+
+<details class="faq">
+  <summary>ADC 读数一直在跳，是芯片坏了吗？</summary>
+  <div class="body">
+    <p>几乎不是。按影响从大到小排查：</p>
+    <ul class="ticks">
+      <li><strong>基准</strong>：基准源噪声与温漂直接进入结果；用电源当基准时，读数会随负载变化。</li>
+      <li><strong>驱动与建立时间</strong>：高阻分压 + 大 RC 会让采样保持电容充不满，表现为系统性偏低且随通道变化。</li>
+      <li><strong>地</strong>：模拟地与功率地共用走线，大电流一开读数就跳。</li>
+      <li><strong>混叠</strong>：输入存在高于 fs/2 的成分且没有抗混叠滤波，读数会出现低频拍频。</li>
+    </ul>
+    <p>判据：短接输入端采样做 FFT，噪声底与有效位数应该接近 datasheet 标称值；达不到就是前端或布局问题。</p>
+  </div>
+</details>
+
+<details class="faq">
+  <summary>辐射发射预测试超标，先改电路还是先改 PCB？</summary>
+  <div class="body">
+    <p>先用“关模块”定位：逐个关闭开关电源、时钟输出、通信接口，看超标频点是否消失。窄带尖峰通常来自时钟或开关频率的谐波；宽带抬升多来自线缆上的共模电流。</p>
+    <p>窄带：改缓冲电阻、展频、加磁珠与屏蔽。宽带：加共模扼流圈、改善连接器接地、缩短泄放路径。改板前先在样机上验证措施有效，避免盲目改版。</p>
+  </div>
+</details>
+
+<details class="faq">
+  <summary>ESD 测试时芯片被打坏，防护哪里没做好？</summary>
+  <div class="body">
+    <p>核心看泄放路径是否“短、直、先防护后进芯片”。常见问题：TVS 放在芯片旁边而不是连接器旁边；泄放回路经过敏感地；防护器件的地用了细长走线；接口差分线在 TVS 之前分支到芯片。</p>
+    <p>处理方式：把 TVS 移到连接器入口，地焊盘大面积接地平面，保证干扰电流在到达芯片前就被旁路。</p>
+  </div>
+</details>
+
+<div class="callout">
+  <span class="ico">→</span>
+  <p>想系统地把这些坑提前避免，去看 <a href="checklist.html">设计评审清单</a>；需要算取值时用 <a href="calculators.html">工程计算器</a>。</p>
+</div>
+
+</div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="fgrid">
+      <div>
+        <a class="brand" href="index.html">
+          <span class="brand-mark" aria-hidden="true">HW</span>
+          <span>HW Module Design Learning<small>硬件模块设计学习</small></span>
+        </a>
+        <p>一套面向电子工程师、嵌入式开发者与电子类专业学生的模块化硬件设计学习资料。内容持续更新。</p>
+      </div>
+      <div>
+        <h4>学习</h4>
+        <a href="index.html#path">六阶段学习路径</a>
+        <a href="modules.html">十个典型模块</a>
+        <a href="faq.html">调试问答</a>
+      </div>
+      <div>
+        <h4>工具</h4>
+        <a href="checklist.html">设计评审清单</a>
+        <a href="calculators.html">工程计算器</a>
+        <a href="index.html#path">学习方法</a>
+      </div>
+    </div>
+    <div class="bottom">
+      <span>© 2026 HW Module Design Learning</span>
+      <span>内容供学习参考，实际设计请以器件 datasheet 与相关标准为准</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

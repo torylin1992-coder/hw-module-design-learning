@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>十个典型硬件模块设计要点 — 电源 / 时钟 / 接口 / 采样 / 驱动 | HW Module Design Learning</title>
+<meta name="description" content="Buck、LDO、MCU 最小系统、复位看门狗、晶振时钟、RS-485/CAN、以太网 PHY、ADC 采样前端、电机驱动、传感器接口：十个硬件模块的职责、关键器件、设计要点、常见坑与验证方法。">
+<meta name="keywords" content="Buck电路设计,LDO选型,MCU最小系统,晶振负载电容,RS-485终端电阻,CAN总线,以太网PHY,ADC采样电路,电机驱动,H桥,硬件模块设计">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://torylin1992-coder.github.io/hw-module-design-learning/modules.html">
+<meta property="og:url" content="https://torylin1992-coder.github.io/hw-module-design-learning/modules.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="HW Module Design Learning">
+<meta property="og:title" content="十个典型硬件模块设计要点">
+<meta property="og:description" content="电源、时钟、接口、采样、驱动、传感器：模块级设计要点与踩坑记录。">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231550e8'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='13' font-weight='bold' fill='white' text-anchor='middle'%3EHW%3C/text%3E%3C/svg%3E">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "十个典型硬件模块设计要点",
+  "description": "Buck、LDO、MCU 最小系统、复位看门狗、晶振时钟、RS-485/CAN、以太网 PHY、ADC 采样前端、电机驱动、传感器接口的职责、设计要点、常见坑与验证方法。",
+  "inLanguage": "zh-CN",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "HW Module Design Learning"
+  },
+  "about": [
+    "Buck 转换器",
+    "LDO",
+    "MCU 最小系统",
+    "ADC 前端",
+    "RS-485",
+    "CAN 总线",
+    "EMC"
+  ],
+  "author": {
+    "@type": "Organization",
+    "name": "HW Module Design Learning"
+  }
+}
+</script>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true">HW</span>
+      <span>HW Module Design Learning<small>硬件模块设计学习</small></span>
+    </a>
+    <nav class="nav" aria-label="主导航">
+      <a href="index.html">首页</a>
+      <a href="modules.html" aria-current="page">模块手册</a>
+      <a href="checklist.html">评审清单</a>
+      <a href="calculators.html">工程计算器</a>
+      <a href="faq.html">调试问答</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+  <nav class="breadcrumb" aria-label="面包屑"><a href="index.html">首页</a><span>/</span>模块手册</nav>
+  <div class="page-head">
+    <h1>十个典型硬件模块设计要点</h1>
+    <p>一块板子看起来复杂，拆开无非是十几个功能模块的组合。每个模块问四件事：它负责什么、关键器件怎么选、设计要点在哪、怎么证明它是对的。下面每个模块都按这四段展开。</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <nav class="toc" aria-label="本页目录">
+    <a href="#m01">M01 Buck</a>
+    <a href="#m02">M02 LDO</a>
+    <a href="#m03">M03 MCU 最小系统</a>
+    <a href="#m04">M04 复位与看门狗</a>
+    <a href="#m05">M05 时钟与晶振</a>
+    <a href="#m06">M06 RS-485 / CAN</a>
+    <a href="#m07">M07 以太网 PHY</a>
+    <a href="#m08">M08 ADC 前端</a>
+    <a href="#m09">M09 电机驱动</a>
+    <a href="#m10">M10 传感器接口</a>
+  </nav>
+</div>
+
+<div class="wrap" style="padding-bottom:60px">
+
+<section class="module" id="m01" style="padding-top:26px">
+  <div class="module-head">
+    <h2>M01 · Buck 降压电源</h2>
+    <span class="tag blue">电源</span>
+    <span class="tag">高优先级</span>
+  </div>
+  <p class="role">把较高的输入电压高效降到低压大电流轨，通常是 5 V / 3.3 V / 1.8 V、几百 mA 到几安培的主供电路径。效率高是它存在的理由，也是布局最敏感的原因。</p>
+  <div class="cols">
+    <div class="block">
+      <h4>设计要点</h4>
+      <ul class="ticks">
+        <li>先算占空比与最大负载，把电感纹波电流 ΔI<sub>L</sub> 控制在 20%–40% I<sub>out</sub>，再反推电感值。</li>
+        <li>电感选型看饱和电流 I<sub>sat</sub> &gt; I<sub>out</sub> + ΔI<sub>L</sub>/2，同时接受 DCR 带来的铜损；标称电流不是判据。</li>
+        <li>输出电容按纹波与负载瞬变两个条件取较大值，注意 MLCC 在直流偏压下容值会掉 30%–60%。</li>
+        <li>反馈分压紧贴 FB 引脚，FB 走线远离 SW 节点与电感，用地平面或 GND 走线包住。</li>
+        <li>输入电容紧贴 VIN 与 GND 引脚，把热回路（VIN → 高侧管 → 电感 → GND）面积压到最小。</li>
+        <li>确认轻载模式（PFM / 跳周期）下的纹波与最低负载要求，工业场景常需强制 CCM。</li>
+      </ul>
+    </div>
+    <div>
+      <div class="block pit">
+        <h4>常见坑</h4>
+        <ul class="ticks">
+          <li>按标称值选 10 µF，实际在 5 V 偏压下只剩 4 µF，纹波与瞬变全部超标。</li>
+          <li>FB 分压走线穿过 SW 铜皮，输出持续抖动，误判为环路不稳。</li>
+          <li>电感饱和后电流失控，芯片过流保护反复触发，表现为“一加载就重启”。</li>
+          <li>输入电容离得远，长引线的寄生电感与电容形成振铃，SW 节点过压击穿。</li>
+        </ul>
+      </div>
+      <div class="block verify" style="margin-top:18px">
+        <h4>验证方法</h4>
+        <ul class="ticks">
+          <li>空载 / 半载 / 满载三点测输出纹波，探头必须用弹簧地环。</li>
+          <li>负载从 50% 跳到 100% 看跌落与恢复时间，确认在 MCU 允许范围内。</li>
+          <li>测效率曲线（输入功率 / 输出功率），异常低说明电感或开关损耗有问题。</li>
+          <li>热像仪看芯片与电感温升，按降额要求反推结温。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="module" id="m02">
+  <div class="module-head">
+    <h2>M02 · LDO 线性电源</h2>
+    <span class="tag blue">电源</span>
+  </div>
+  <p class="role">给模拟电路、基准、传感器、射频等噪声敏感部分供电。它不高效，但干净、简单、无开关噪声。选型的核心不是电流，而是压差与热。</p>
+  <div class="cols">
+    <div class="block">
+      <h4>设计要点</h4>
+      <ul class="ticks">
+        <li>压差余量：V<sub>in,min</sub> − V<sub>out</sub> 至少留 0.3–0.5 V，覆盖输入纹波与低温下的压差增大。</li>
+        <li>先算热：P = (V<sub>in</sub> − V<sub>out</sub>) × I<sub>out</sub>，再用 θ<sub>JA</sub> 与铜箔面积反推结温，超了就必须换 Buck 或加散热。</li>
+        <li>查 datasheet 对输出电容的要求：有些老型号要求 ESR 在特定窗口，全用低 ESR 陶瓷会振荡。</li>
+        <li>模拟供电优先选高 PSRR、低噪声型号；数字与模拟分轨时，用磁珠或 LC 再做一次隔离。</li>
+        <li>输入输出都要有电容，长输入线还要防振铃；使能脚加上拉/下拉，避免悬空。</li>
+      </ul>
+    </div>
+    <div>
+      <div class="block pit">
+        <h4>常见坑</h4>
+        <ul class="ticks">
+          <li>24 V 降到 3.3 V、200 mA 用 SOT-23 封装，结温直接超 150 °C。</li>
+          <li>用大容量电解替代 MLCC，相位裕度不足，输出自激。</li>
+          <li>输入输出反接无保护，后级被反向电压打穿。</li>
+          <li>使能脚直接接输入，上电瞬间浪涌电流过大触发前级限流。</li>
+        </ul>
+      </div>
+      <div class="block verify" style="margin-top:18px">
+        <h4>验证方法</h4>
+        <ul class="ticks">
+          <li>满载测输入输出压差与温升，确认压差余量在最低输入时仍成立。</li>
+          <li>用示波器看输入扰动传到输出的幅度（实际 PSRR），比看曲线更真实。</li>
+          <li>上电与关断看输出过冲，确认不超过后级绝对最大额定值。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="module" id="m03">
+  <div class="module-head">
+    <h2>M03 · MCU 最小系统</h2>
+    <span class="tag">数字</span>
+    <span class="tag">高优先级</span>
+  </div>
+  <p class="role">让 MCU 能上电、能起振、能复位、能被烧录的最小电路集合。它没有功能，但它是所有功能的前提，也是最容易出“玄学问题”的地方。</p>
+  <div class="cols">
+    <div class="block">
+      <h4>设计要点</h4>
+      <ul class="ticks">
+        <li>每个 VDD 引脚配一颗 100 nF，电容与引脚同侧、过孔直连地平面；整板再加 1–10 µF 储能。</li>
+        <li>VDDA / VREF+ 单独用磁珠或 LC 隔离，配 1 µF + 100 nF，参考电压决定采样绝对精度。</li>
+        <li>复位脚：10 kΩ 上拉到供电 + 100 nF 到地，RC 时间常数覆盖电源上升时间。</li>
+        <li>BOOT / 启动配置引脚必须有确定的上下拉，不允许悬空。</li>
+        <li>调试口至少留 SWDIO、SWCLK、GND、3V3 四个焊盘，建议再留 NRST，烧录失败时能硬复位。</li>
+        <li>未用引脚按 datasheet 处理（设为输出低或内部上拉），不要浮空——浮空输入会带来额外功耗与噪声。</li>
+      </ul>
+    </div>
+    <div>
+      <div class="block pit">
+        <h4>常见坑</h4>
+        <ul class="ticks">
+          <li>去耦电容全放在板子另一侧，共用过孔，高频回流路径被拉长。</li>
+          <li>复位电容取 1 µF，上电慢，烧录器连接窗口被吃掉。</li>
+          <li>BOOT0 悬空，偶发进入 bootloader，表现为“偶尔不启动”。</li>
+          <li>晶振走线绕远、跨越分割，起振时间变长甚至高温不起振。</li>
+        </ul>
+      </div>
+      <div class="block verify" style="margin-top:18px">
+        <h4>验证方法</h4>
+        <ul class="ticks">
+          <li>用可调电源缓慢升压，观察复位释放点与电流曲线是否单调。</li>
+          <li>测静态电流，与 datasheet 对比；偏大往往是有引脚浮空或外设未关时钟。</li>
+          <li>连续断电上电 100 次，统计启动成功率——这一步能抓出大部分隐患。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="module" id="m04">
+  <div class="module-head">
+    <h2>M04 · 复位与看门狗</h2>
+    <span class="tag">数字</span>
+  </div>
+  <p class="role">保证 MCU 在该复位的时候复位、该跑的时候不被误复位。工业与车载场景里，这一小块电路决定了设备的“能不能长期无人值守”。</p>
+  <div class="cols">
+    <div class="block">
+      <h4>设计要点</h4>
+      <ul class="ticks">
+        <li>复位阈值要与 MCU 最低工作电压匹配（常见 2.0 V / 2.93 V / 4.0 V 档），不能只靠阻容。</li>
+        <li>复位延时 t<sub>RP</sub> 要覆盖电源上升时间，慢上电场合尤其要留够。</li>
+        <li>手动复位按键串 RC 去抖并加 ESD 防护，复位线不要走长线。</li>
+        <li>外部看门狗喂狗周期留 2 倍以上余量；低功耗休眠时确认看门狗不会误触发。</li>
+        <li>掉电检测（BOR / PVD）触发时优先保存关键数据并关外设，避免写坏 Flash。</li>
+      </ul>
+    </div>
+    <div>
+      <div class="block pit">
+        <h4>常见坑</h4>
+        <ul class="ticks">
+          <li>纯 RC 复位在缓慢上电时产生多次抖动，MCU 反复重启。</li>
+          <li>看门狗在长任务（如 Flash 擦除）中被饿死，误判死机。</li>
+          <li>复位线靠近继电器或电机线，被耦合干扰拉低，表现为随机重启。</li>
+        </ul>
+      </div>
+      <div class="block verify" style="margin-top:18px">
+        <h4>验证方法</h4>
+        <ul class="ticks">
+          <li>电源缓升 / 缓降各测一遍复位释放与拉低点。</li>
+          <li>在复位脚注入快速脉冲，确认滤波有效。</li>
+          <li>人为制造死循环，验证看门狗能在规定时间内恢复。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="module" id="m05">
+  <div class="module-head">
+    <h2>M05 · 时钟与晶振</h2>
+    <span class="tag">数字</span>
+    <span class="tag">易忽视</span>
+  </div>
+  <p class="role">为 MCU、PHY、USB、RTC 提供时基。时钟不干净，通信会偶发误码、采样会飘、USB 会枚举失败——而这些现象通常不会指向“晶振”。</p>
+  <div class="cols">
+    <div class="block">
+      <h4>设计要点</h4>
+      <ul class="ticks">
+        <li>负载电容公式：C<sub>L</sub> = (C1·C2)/(C1+C2) + C<sub>stray</sub>，C<sub>stray</sub> 一般取 3–5 pF，不要直接抄参考图的 22 pF。</li>
+        <li>确认负阻抗余量（−R）大于晶振 ESR 的 5 倍，否则低温或老化后不起振。</li>
+        <li>晶振紧靠芯片，走线短且等长，四周包地并打过孔，晶振下方不走任何信号。</li>
+        <li>有源晶振注意电源去耦与输出端接，长走线串 22–33 Ω 阻尼。</li>
+        <li>RTC 的 32.768 kHz 关注负载电容匹配与温度特性，走线远离发热器件。</li>
+        <li>以太网 / USB 的时钟精度通常要求 ±50 ppm 以内，注意晶振本身精度 + 温漂 + 老化。</li>
+      </ul>
+    </div>
+    <div>
+      <div class="block pit">
+        <h4>常见坑</h4>
+        <ul class="ticks">
+          <li>直接拿示波器探头碰晶振引脚，探头电容让电路停振，误判“晶振坏”。</li>
+          <li>晶振地焊盘没接地或只连一根细线，起振幅度不足。</li>
+          <li>晶振旁边走 PWM 或 SW 节点，频偏与抖动变大。</li>
+        </ul>
+      </div>
+      <div class="block verify" style="margin-top:18px">
+        <h4>验证方法</h4>
+        <ul class="ticks">
+          <li>用 MCU 的 MCO / CLKOUT 引脚输出时钟再测频率，别直接测晶振。</li>
+          <li>测起振时间与高低温起振（冷启动最容易失败）。</li>
+          <li>用频率计测 ppm 偏差，超出规格就调负载电容。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="module" id="m06">
+  <div class="module-head">
+    <h2>M06 · RS-485 / CAN 收发接口</h2>
+    <span class="tag">接口</span>
+    <span class="tag">防护重点</span>
+  </div>
+  <p class="role">工业现场最常用的两种差分总线。它们看起来只是“加个收发器”，实际难点全在共模、端接与浪涌防护上。</p>
+  <div class="cols">
+    <div class="block">
+      <h4>设计要点</h4>
+      <ul class="ticks">
+        <li>终端电阻 120 Ω 只在总线两个物理末端各一个，中间节点绝不能加。</li>
+        <li>RS-485 的 fail-safe 偏置（上拉/下拉）保证空闲时差分电压 &gt; 200 mV。</li>
+        <li>确认收发器共模电压范围（RS-485 典型 −7 V ~ +12 V），超出就需要隔离或加共模扼流圈。</li>
+        <li>TVS 选低电容型（几 pF 到几十 pF），钳位电压低于收发器绝对最大额定值。</li>
+        <li>CAN 可用 split termination（两个 60 Ω + 中心 4.7 nF 到地）降低共模辐射。</li>
+        <li>差分对走线等长、紧耦合，避免长桩线；总线入口先防护再进芯片。</li>
+      </ul>
+    </div>
+    <div>
+      <div class="block pit">
+        <h4>常见坑</h4>
+        <ul class="ticks">
+          <li>每个节点都贴 120 Ω，总线负载过重，通信距离骤减。</li>
+          <li>A/B 反接，短距离能通、长距离全错。</li>
+          <li>两端设备不共地，共模电压漂移打坏收发器。</li>
+          <li>TVS 电容过大，高速率下眼图闭合。</li>
+        </ul>
+      </div>
+      <div class="block verify" style="margin-top:18px">
+        <h4>验证方法</h4>
+        <ul class="ticks">
+          <li>示波器差分探头看总线波形与眼图，确认上升沿与过冲。</li>
+          <li>满载通信跑 24 小时统计误码，比一次收发更能说明问题。</li>
+          <li>注入共模干扰与静电，验证防护器件动作后能自恢复。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="module" id="m07">
+  <div class="module-head">
+    <h2>M07 · 以太网 PHY</h2>
+    <span class="tag">接口</span>
+    <span class="tag">EMC 重点</span>
+  </div>
+  <p class="role">把 MAC 的数字信号变成线上的差分模拟信号。它是整板辐射发射的头号嫌疑对象，也是“网口能插但 ping 不通”这类问题的源头。</p>
+  <div class="cols">
+    <div class="block">
+      <h4>设计要点</h4>
+      <ul class="ticks">
+        <li>MDI 差分对按 100 Ω 差分阻抗设计，对内等长、对间保持间距，避免跨分割。</li>
+        <li>变压器中心抽头做 Bob Smith 端接：75 Ω + 1 nF 到机壳地，泄放共模能量。</li>
+        <li>PHY 复位宽度要满足 datasheet 要求（常见 ≥ 10 ms），复位释放要在时钟稳定之后。</li>
+        <li>时钟源精度 ±50 ppm，25 MHz 与 50 MHz 不要混用；RMII 的 REF_CLK 走线要短。</li>
+        <li>strap 配置引脚的上电电平决定 PHY 地址与工作模式，电阻不能漏贴。</li>
+        <li>网口外壳地与数字地之间用高压电容或直接连接，按产品安规与 EMC 策略决定。</li>
+      </ul>
+    </div>
+    <div>
+      <div class="block pit">
+        <h4>常见坑</h4>
+        <ul class="ticks">
+          <li>网口金属外壳与数字地处理不当，辐射测试在 125 MHz 附近超标。</li>
+          <li>strap 电阻漏贴，PHY 地址冲突或进入错误模式。</li>
+          <li>变压器匝比 / 电压比选错，link 建立但丢包严重。</li>
+          <li>复位释放早于时钟稳定，偶发 link 不上，重新插拔又好了。</li>
+        </ul>
+      </div>
+      <div class="block verify" style="margin-top:18px">
+        <h4>验证方法</h4>
+        <ul class="ticks">
+          <li>测上电到 link up 的时间，反复上电 50 次确认稳定。</li>
+          <li>长 ping 与满带宽打流，统计丢包与重传。</li>
+          <li>预兼容辐射测试，重点看 25 MHz / 125 MHz 及其谐波。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="module" id="m08">
+  <div class="module-head">
+    <h2>M08 · ADC 采样前端</h2>
+    <span class="tag">模拟</span>
+    <span class="tag">精度核心</span>
+  </div>
+  <p class="role">把真实世界的电压、电流、温度变成可信的数字。链路上一颗电阻的精度、一个运放的带宽、一次采样建立不足，都会直接吃掉有效位数。</p>
+  <div class="cols">
+    <div class="block">
+      <h4>设计要点</h4>
+      <ul class="ticks">
+        <li>先定输入范围与共模：单端还是差分，是否需要在 0–VREF 内偏置。</li>
+        <li>分压电阻用 0.1% 且温漂匹配的型号，或改用仪表放大器提高输入阻抗。</li>
+        <li>驱动运放带宽至少是采样率的 10 倍，压摆率满足满量程跳变需求。</li>
+        <li>RC 建立时间：R·C 要小于采样窗口的 1/3，否则高阻源会带来增益误差。</li>
+        <li>抗混叠滤波截止频率低于 f<sub>s</sub>/2，靠软件平均救不回混叠。</li>
+        <li>基准源的噪声与温漂决定绝对精度，做误差预算表把所有项列出来。</li>
+      </ul>
+    </div>
+    <div>
+      <div class="block pit">
+        <h4>常见坑</h4>
+        <ul class="ticks">
+          <li>分压电阻取到几百 kΩ“省电”，采样保持电容充不满，读数系统性偏低。</li>
+          <li>用电源当基准，读数随负载变化，看起来像“传感器漂移”。</li>
+          <li>模拟地与功率地共用一段走线，大电流一开 ADC 就跳。</li>
+          <li>忽略 ADC 输入钳位二极管的漏电，高阻分压下误差明显。</li>
+        </ul>
+      </div>
+      <div class="block verify" style="margin-top:18px">
+        <h4>验证方法</h4>
+        <ul class="ticks">
+          <li>用高精度源做直流扫描，看线性度与端点误差。</li>
+          <li>短接输入采一段数据做 FFT，算噪声与有效位数（ENOB）。</li>
+          <li>通道间串扰测试：一路满幅方波，另一路短接看读数波动。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="module" id="m09">
+  <div class="module-head">
+    <h2>M09 · 电机 / 负载驱动</h2>
+    <span class="tag blue">功率</span>
+    <span class="tag">高风险</span>
+  </div>
+  <p class="role">把弱电的控制信号放大成能驱动电机、阀门、继电器的功率输出。这是最容易被“炸管子”教育的地方，也是最需要留余量的地方。</p>
+  <div class="cols">
+    <div class="block">
+      <h4>设计要点</h4>
+      <ul class="ticks">
+        <li>MOSFET 看 R<sub>ds(on)</sub> @ 实际 V<sub>gs</sub> 与结温，按 2 倍以上电流余量选，热才算得过来。</li>
+        <li>栅极串电阻控制 dv/dt 与振铃，兼顾开关损耗与 EMI，必要时加关断加速二极管。</li>
+        <li>高边驱动注意自举电容容量与自举二极管反向恢复，低频 PWM 时自举会掉电。</li>
+        <li>死区时间按器件关断时间 + 驱动延时设置，宁大勿小；直通是最常见的炸管原因。</li>
+        <li>感性负载必须有续流路径，电机线加 TVS 或 RC 吸收，继电器加反向二极管。</li>
+        <li>过流采样优先低边分流 + 差分运放，注意共模范围与采样电阻的功率。</li>
+      </ul>
+    </div>
+    <div>
+      <div class="block pit">
+        <h4>常见坑</h4>
+        <ul class="ticks">
+          <li>自举电容不足，高边驱动在低占空比下失效，波形缺角。</li>
+          <li>死区不足导致上下管直通，一次上电就炸。</li>
+          <li>PWM 走线长且与电流采样线并行，误触发过流保护。</li>
+          <li>电机线未绞对，辐射发射在 30–300 MHz 超标。</li>
+        </ul>
+      </div>
+      <div class="block verify" style="margin-top:18px">
+        <h4>验证方法</h4>
+        <ul class="ticks">
+          <li>电流探头看空载 / 堵转 / 加减速波形，确认无异常尖峰。</li>
+          <li>实测死区时间（双通道看上下管栅极）。</li>
+          <li>满载连续运行 1 小时看温升，用热像仪找最热点。</li>
+          <li>堵转与短路各测一次保护动作时间。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="module" id="m10">
+  <div class="module-head">
+    <h2>M10 · 传感器接口</h2>
+    <span class="tag">接口</span>
+    <span class="tag">模拟 / 数字</span>
+  </div>
+  <p class="role">把传感器的微弱信号可靠地送进系统。数字接口（I2C / SPI）看起来简单，但上拉、速率、时序几乎每一项都能让通信失败。</p>
+  <div class="cols">
+    <div class="block">
+      <h4>设计要点</h4>
+      <ul class="ticks">
+        <li>I2C 上拉按总线电容算：R<sub>p</sub> ≈ t<sub>r</sub> / (0.8473 × C<sub>b</sub>)，再用 I<sub>OL</sub> 校验低电平不被抬高。</li>
+        <li>确认 SPI 的 CPOL / CPHA 模式与 CS 建立保持时间，长走线降速先求通再求快。</li>
+        <li>模拟传感器注意激励源与 ADC 基准同源（比率测量），可消掉基准漂移。</li>
+        <li>长线传输改差分、4–20 mA 或 RS-485 变送，不要直接用长单端模拟线。</li>
+        <li>屏蔽层单端接地，靠近接收端；两端接地会形成地环流，反而更差。</li>
+        <li>给传感器单独 LDO 或 RC 供电，避免被数字负载的尖峰污染。</li>
+      </ul>
+    </div>
+    <div>
+      <div class="block pit">
+        <h4>常见坑</h4>
+        <ul class="ticks">
+          <li>上拉过强（1 kΩ），低电平抬高，某些器件认不出起始位。</li>
+          <li>SPI 时钟过快，从设备采样错位，读回数据高位错乱。</li>
+          <li>传感器地与功率地共用，电机一启动读数就乱跳。</li>
+          <li>热插拔无防护，第一次插拔就损坏接口芯片。</li>
+        </ul>
+      </div>
+      <div class="block verify" style="margin-top:18px">
+        <h4>验证方法</h4>
+        <ul class="ticks">
+          <li>逻辑分析仪抓完整时序，对照 datasheet 的建立/保持要求逐项比。</li>
+          <li>同一被测点连续采 1000 次，算重复性与标准差。</li>
+          <li>在电机、继电器动作时同步采集，观察读数受扰程度。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="callout" style="margin-top:8px">
+  <span class="ico">→</span>
+  <p>看完手册，下一步是把它变成检查动作：打开 <a href="checklist.html">设计评审清单</a>，按模块逐条对照；需要算取值时用 <a href="calculators.html">工程计算器</a>；调试卡住了去 <a href="faq.html">调试问答</a>。</p>
+</div>
+
+</div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="fgrid">
+      <div>
+        <a class="brand" href="index.html">
+          <span class="brand-mark" aria-hidden="true">HW</span>
+          <span>HW Module Design Learning<small>硬件模块设计学习</small></span>
+        </a>
+        <p>一套面向电子工程师、嵌入式开发者与电子类专业学生的模块化硬件设计学习资料。内容持续更新。</p>
+      </div>
+      <div>
+        <h4>学习</h4>
+        <a href="index.html#path">六阶段学习路径</a>
+        <a href="modules.html">十个典型模块</a>
+        <a href="faq.html">调试问答</a>
+      </div>
+      <div>
+        <h4>工具</h4>
+        <a href="checklist.html">设计评审清单</a>
+        <a href="calculators.html">工程计算器</a>
+        <a href="index.html#path">学习方法</a>
+      </div>
+    </div>
+    <div class="bottom">
+      <span>© 2026 HW Module Design Learning</span>
+      <span>内容供学习参考，实际设计请以器件 datasheet 与相关标准为准</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

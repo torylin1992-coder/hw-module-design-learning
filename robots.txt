@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://torylin1992-coder.github.io/hw-module-design-learning/sitemap.xml

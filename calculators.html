@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>硬件工程计算器 — 分压 / LDO 热耗 / RC 滤波 / 微带阻抗 / 走线载流 | HW Module Design Learning</title>
+<meta name="description" content="六个常用的硬件设计计算器：电阻分压与反算、LDO 功耗与结温、RC 低通截止频率、微带线特性阻抗、IPC-2221 走线载流线宽、上升时间与带宽换算。打开即用，无需注册。">
+<meta name="keywords" content="分压电阻计算,LDO功耗计算,结温计算,RC滤波截止频率,微带线阻抗计算,走线宽度计算,IPC-2221,上升时间带宽">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://torylin1992-coder.github.io/hw-module-design-learning/calculators.html">
+<meta property="og:url" content="https://torylin1992-coder.github.io/hw-module-design-learning/calculators.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="HW Module Design Learning">
+<meta property="og:title" content="硬件工程计算器 — 六个常用在线估算工具">
+<meta property="og:description" content="分压、LDO 热耗、RC 滤波、微带阻抗、走线载流、上升时间带宽，一页算完。">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231550e8'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='13' font-weight='bold' fill='white' text-anchor='middle'%3EHW%3C/text%3E%3C/svg%3E">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "硬件工程计算器",
+  "description": "电阻分压与反算、LDO 功耗与结温、RC 低通截止频率、微带线特性阻抗、IPC-2221 走线载流线宽、上升时间与带宽换算。",
+  "inLanguage": "zh-CN",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Any",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "CNY"
+  },
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "HW Module Design Learning"
+  }
+}
+</script>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true">HW</span>
+      <span>HW Module Design Learning<small>硬件模块设计学习</small></span>
+    </a>
+    <nav class="nav" aria-label="主导航">
+      <a href="index.html">首页</a>
+      <a href="modules.html">模块手册</a>
+      <a href="checklist.html">评审清单</a>
+      <a href="calculators.html" aria-current="page">工程计算器</a>
+      <a href="faq.html">调试问答</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+  <nav class="breadcrumb" aria-label="面包屑"><a href="index.html">首页</a><span>/</span>工程计算器</nav>
+  <div class="page-head">
+    <h1>硬件工程计算器</h1>
+    <p>设计时真正要反复算的就那么几个数。这里把它们做成打开即用的页面，改一个输入立刻出结果。所有计算都在浏览器本地完成，不上传任何数据。</p>
+  </div>
+</div>
+
+<div class="wrap" style="padding-bottom:56px">
+
+<section class="calc" data-calc="divider" aria-labelledby="c1">
+  <h2 id="c1">1 · 电阻分压 / 反算阻值</h2>
+  <p class="formula">Vout = Vin × R2 / (R1 + R2)　|　R2 = R1 × Vout / (Vin − Vout)</p>
+  <div class="fields">
+    <div class="field"><label for="dv-vin">输入 Vin (V)</label><input id="dv-vin" type="number" step="any" value="12"></div>
+    <div class="field"><label for="dv-r1">上臂 R1 (kΩ)</label><input id="dv-r1" type="number" step="any" value="10"></div>
+    <div class="field"><label for="dv-r2" id="dv-r2label">下臂 R2 (kΩ)</label><input id="dv-r2" type="number" step="any" value="4.7"></div>
+    <div class="field"><label for="dv-mode">计算模式</label>
+      <select id="dv-mode">
+        <option value="vout">已知 R1/R2 求 Vout</option>
+        <option value="r2">已知目标 Vout 求 R2</option>
+      </select>
+    </div>
+  </div>
+  <div class="out">
+    <div><span>输出电压</span><b id="dv-vout">—</b></div>
+    <div><span>分压比</span><b id="dv-ratio">—</b></div>
+    <div><span>分压电流</span><b id="dv-i">—</b></div>
+    <div><span>总功耗</span><b id="dv-p">—</b></div>
+    <div><span>推荐 R2</span><b id="dv-r2out">—</b></div>
+  </div>
+  <p class="hint" id="dv-note"></p>
+</section>
+
+<section class="calc" data-calc="ldo" aria-labelledby="c2">
+  <h2 id="c2">2 · LDO 功耗与结温</h2>
+  <p class="formula">P = (Vin − Vout) × Iout　|　Tj = Ta + P × θJA</p>
+  <div class="fields">
+    <div class="field"><label for="ldo-vin">输入 Vin (V)</label><input id="ldo-vin" type="number" step="any" value="24"></div>
+    <div class="field"><label for="ldo-vout">输出 Vout (V)</label><input id="ldo-vout" type="number" step="any" value="3.3"></div>
+    <div class="field"><label for="ldo-i">负载 (mA)</label><input id="ldo-i" type="number" step="any" value="150"></div>
+    <div class="field"><label for="ldo-theta">θJA (°C/W)</label><input id="ldo-theta" type="number" step="any" value="60"></div>
+    <div class="field"><label for="ldo-ta">环境温度 (°C)</label><input id="ldo-ta" type="number" step="any" value="45"></div>
+    <div class="field"><label for="ldo-tjmax">最大结温 (°C)</label><input id="ldo-tjmax" type="number" step="any" value="125"></div>
+  </div>
+  <div class="out">
+    <div><span>热耗 P</span><b id="ldo-p">—</b></div>
+    <div><span>温升 ΔT</span><b id="ldo-tr">—</b></div>
+    <div><span>结温 Tj</span><b id="ldo-tj">—</b></div>
+    <div><span>效率</span><b id="ldo-eff">—</b></div>
+  </div>
+  <p class="hint" id="ldo-note"></p>
+</section>
+
+<section class="calc" data-calc="rc" aria-labelledby="c3">
+  <h2 id="c3">3 · RC 低通截止频率</h2>
+  <p class="formula">fc = 1 / (2πRC)　|　τ = RC　|　tr(10–90%) ≈ 2.2τ</p>
+  <div class="fields">
+    <div class="field"><label for="rc-r">R (kΩ)</label><input id="rc-r" type="number" step="any" value="10"></div>
+    <div class="field"><label for="rc-c">C (nF)</label><input id="rc-c" type="number" step="any" value="100"></div>
+  </div>
+  <div class="out">
+    <div><span>截止频率 fc</span><b id="rc-fc">—</b></div>
+    <div><span>时间常数 τ</span><b id="rc-tau">—</b></div>
+    <div><span>上升时间</span><b id="rc-tr">—</b></div>
+  </div>
+  <p class="hint" id="rc-note"></p>
+</section>
+
+<section class="calc" data-calc="microstrip" aria-labelledby="c4">
+  <h2 id="c4">4 · 微带线特性阻抗</h2>
+  <p class="formula">Z0 = (87 / √(εr + 1.41)) × ln(5.98h / (0.8w + t))　— IPC-2141 近似</p>
+  <div class="fields">
+    <div class="field"><label for="mz-h">介质厚度 h (mil)</label><input id="mz-h" type="number" step="any" value="6"></div>
+    <div class="field"><label for="mz-w">线宽 w (mil)</label><input id="mz-w" type="number" step="any" value="10"></div>
+    <div class="field"><label for="mz-t">铜厚 t (mil)</label><input id="mz-t" type="number" step="any" value="1.4"></div>
+    <div class="field"><label for="mz-er">介电常数 εr</label><input id="mz-er" type="number" step="any" value="4.3"></div>
+  </div>
+  <div class="out">
+    <div><span>特性阻抗</span><b id="mz-z0">—</b></div>
+    <div><span>有效介电常数</span><b id="mz-eeff">—</b></div>
+    <div><span>传播延迟</span><b id="mz-delay">—</b></div>
+  </div>
+  <p class="hint" id="mz-note"></p>
+</section>
+
+<section class="calc" data-calc="trace" aria-labelledby="c5">
+  <h2 id="c5">5 · 走线载流与线宽（IPC-2221）</h2>
+  <p class="formula">A = (I / (k × ΔT<sup>0.44</sup>))<sup>1/0.725</sup>　|　外层 k=0.048，内层 k=0.024</p>
+  <div class="fields">
+    <div class="field"><label for="ip-i">电流 I (A)</label><input id="ip-i" type="number" step="any" value="2"></div>
+    <div class="field"><label for="ip-dt">允许温升 ΔT (°C)</label><input id="ip-dt" type="number" step="any" value="10"></div>
+    <div class="field"><label for="ip-oz">铜厚</label>
+      <select id="ip-oz"><option value="0.5">0.5 oz</option><option value="1" selected>1 oz</option><option value="2">2 oz</option><option value="3">3 oz</option></select>
+    </div>
+    <div class="field"><label for="ip-layer">所在层</label>
+      <select id="ip-layer"><option value="external" selected>外层</option><option value="internal">内层</option></select>
+    </div>
+  </div>
+  <div class="out">
+    <div><span>建议线宽</span><b id="ip-w">—</b></div>
+    <div><span>换算公制</span><b id="ip-wmm">—</b></div>
+    <div><span>所需截面积</span><b id="ip-a">—</b></div>
+  </div>
+  <p class="hint" id="ip-note"></p>
+</section>
+
+<section class="calc" data-calc="bw" aria-labelledby="c6">
+  <h2 id="c6">6 · 上升时间与带宽</h2>
+  <p class="formula">BW ≈ 0.35 / tr（单极点系统）　|　临界走线长度 ≈ tr / (6 × tpd)</p>
+  <div class="fields">
+    <div class="field"><label for="bw-tr">上升时间 tr (ns)</label><input id="bw-tr" type="number" step="any" value="5"></div>
+  </div>
+  <div class="out">
+    <div><span>等效带宽</span><b id="bw-bw">—</b></div>
+    <div><span>关注频段上限</span><b id="bw-fknee">—</b></div>
+    <div><span>临界走线长度</span><b id="bw-len">—</b></div>
+  </div>
+  <p class="hint" id="bw-note"></p>
+</section>
+
+<div class="callout warn">
+  <span class="ico">!</span>
+  <p>所有公式都是工程近似，用于快速估算与量级判断。微带阻抗、载流能力受板材、阻焊、铜箔粗糙度、散热条件影响，最终请以板厂或场求解器结果为准。</p>
+</div>
+
+<div class="callout">
+  <span class="ico">→</span>
+  <p>算完取值，去 <a href="modules.html">模块手册</a> 对一遍设计要点，再用 <a href="checklist.html">评审清单</a> 逐条确认。</p>
+</div>
+
+</div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="fgrid">
+      <div>
+        <a class="brand" href="index.html">
+          <span class="brand-mark" aria-hidden="true">HW</span>
+          <span>HW Module Design Learning<small>硬件模块设计学习</small></span>
+        </a>
+        <p>一套面向电子工程师、嵌入式开发者与电子类专业学生的模块化硬件设计学习资料。内容持续更新。</p>
+      </div>
+      <div>
+        <h4>学习</h4>
+        <a href="index.html#path">六阶段学习路径</a>
+        <a href="modules.html">十个典型模块</a>
+        <a href="faq.html">调试问答</a>
+      </div>
+      <div>
+        <h4>工具</h4>
+        <a href="checklist.html">设计评审清单</a>
+        <a href="calculators.html">工程计算器</a>
+        <a href="index.html#path">学习方法</a>
+      </div>
+    </div>
+    <div class="bottom">
+      <span>© 2026 HW Module Design Learning</span>
+      <span>内容供学习参考，实际设计请以器件 datasheet 与相关标准为准</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/app.js" defer></script>
+</body>
+</html>

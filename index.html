@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HW Module Design Learning — 硬件模块设计学习：从原理图到量产的模块化路线</title>
+<meta name="description" content="HW Module Design Learning 是一套面向电子工程师与嵌入式开发者的硬件模块设计学习站：6 阶段学习路径、10 个典型硬件模块设计要点、50+ 条设计评审清单、实用工程计算器，覆盖电源、时钟、接口、采样、保护、PCB、EMC 与可制造性。">
+<meta name="keywords" content="硬件设计,硬件学习,模块化设计,原理图设计,PCB设计,电源设计,MCU最小系统,EMC,ESD,硬件工程师,电路设计入门,HW module design">
+<meta name="author" content="HW Module Design Learning">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://torylin1992-coder.github.io/hw-module-design-learning/">
+<meta property="og:url" content="https://torylin1992-coder.github.io/hw-module-design-learning/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="HW Module Design Learning">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="HW Module Design Learning — 硬件模块设计学习">
+<meta property="og:description" content="把硬件设计拆成可复用的模块：学习路径、模块设计手册、评审清单与工程计算器。">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1550e8">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231550e8'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='13' font-weight='bold' fill='white' text-anchor='middle'%3EHW%3C/text%3E%3C/svg%3E">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "name": "HW Module Design Learning",
+      "alternateName": "硬件模块设计学习",
+      "inLanguage": "zh-CN",
+      "description": "面向电子工程师与嵌入式开发者的模块化硬件设计学习站：学习路径、模块手册、评审清单与工程计算器。"
+    },
+    {
+      "@type": "CollectionPage",
+      "name": "HW Module Design Learning — 硬件模块设计学习",
+      "description": "6 阶段学习路径、10 个典型硬件模块设计要点、56 条设计评审清单与 6 个工程计算器，覆盖电源、时钟、接口、采样、保护、PCB、EMC 与可制造性。",
+      "inLanguage": "zh-CN",
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "HW Module Design Learning"
+      },
+      "audience": {
+        "@type": "Audience",
+        "audienceType": "电子工程师、嵌入式开发者、电子类专业学生"
+      },
+      "about": [
+        "硬件设计",
+        "电路设计",
+        "PCB 设计",
+        "电源设计",
+        "EMC"
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true">HW</span>
+      <span>HW Module Design Learning<small>硬件模块设计学习</small></span>
+    </a>
+    <nav class="nav" aria-label="主导航">
+      <a href="index.html" aria-current="page">首页</a>
+      <a href="modules.html">模块手册</a>
+      <a href="checklist.html">评审清单</a>
+      <a href="calculators.html">工程计算器</a>
+      <a href="faq.html">调试问答</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section class="hero" style="padding:0">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="kicker"><span class="dot"></span>HARDWARE DESIGN · LEARNING PATH</span>
+        <h1>
+          <span class="en">HW MODULE DESIGN LEARNING</span>
+          把硬件设计<span class="grad">拆成可复用的模块</span>
+        </h1>
+        <p class="lede">从一颗电阻的降额计算，到整板的 EMC 与量产导入。把电源、时钟、接口、采样、保护拆成一个个能独立设计、独立验证、独立复用的硬件模块——这是硬件工程师真正可迁移的能力。</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#path">开始学习路径 →</a>
+          <a class="btn" href="modules.html">打开模块手册</a>
+          <a class="btn btn-ghost" href="checklist.html">下载式评审清单</a>
+        </div>
+        <div class="pill-row">
+          <span class="pill">6 阶段路径</span>
+          <span class="pill">10 个典型模块</span>
+          <span class="pill">50+ 评审项</span>
+          <span class="pill">5 个工程计算器</span>
+        </div>
+      </div>
+
+      <aside class="spec-panel" aria-label="站点概览">
+        <div class="bar"><i></i><i></i><i></i><span>module_spec.txt</span></div>
+        <ul>
+          <li><span>目标读者</span><b>电子 / 嵌入式工程师</b></li>
+          <li><span>前置要求</span><b>基础电路 + 一点 C</b></li>
+          <li><span>主线方法</span><b>模块化 · 约束先行</b></li>
+          <li><span>覆盖范围</span><b>原理图 → PCB → 量产</b></li>
+          <li><span>最新更新</span><b class="ok">2026-10</b></li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section id="path">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">01 / Learning Path</span>
+      <h2>六阶段学习路径：从器件到量产</h2>
+      <p>不要按“教程章节”学硬件，按“板上真实存在的功能块”学。每个阶段都产出一个可以画进原理图的模块，学完就能拼出一块完整的板子。</p>
+    </div>
+
+    <div class="path">
+      <article class="step">
+        <div class="idx">01</div>
+        <div>
+          <h3>电路与器件基础</h3>
+          <p>欧姆定律之外的东西：电阻的功率与温漂、MLCC 的直流偏压特性、电感的饱和电流、MOSFET 的 Qg 与 Rds(on)、二极管的反向恢复。核心是学会读 datasheet 的绝对最大额定值和降额曲线。</p>
+        </div>
+        <div class="meta"><b>产出</b>器件选型表 · 降额规则</div>
+      </article>
+
+      <article class="step">
+        <div class="idx">02</div>
+        <div>
+          <h3>电源与上电时序</h3>
+          <p>先画电源树，再画电路。LDO 与 Buck 的取舍、输入输出电容的取值、环路稳定性、软启动、PG 与使能级联、上下电时序、反接与过流保护。电源是整板故障率最高的模块。</p>
+        </div>
+        <div class="meta"><b>产出</b>电源树 · 上电时序图</div>
+      </article>
+
+      <article class="step">
+        <div class="idx">03</div>
+        <div>
+          <h3>数字最小系统</h3>
+          <p>MCU 不启动是新手最常见的困局。供电去耦、晶振负载电容与走线、复位电路与 RC 常数、BOOT 引脚电平、SWD/JTAG 调试口、GPIO 复用与未用引脚处理——把最小系统做到一次上电成功。</p>
+        </div>
+        <div class="meta"><b>产出</b>最小系统原理图</div>
+      </article>
+
+      <article class="step">
+        <div class="idx">04</div>
+        <div>
+          <h3>模拟与信号链</h3>
+          <p>从传感器到 ADC 的完整链路：分压/分流、运放的输入共模与轨到轨、单端与差分、抗混叠滤波、基准源精度、采样率与有效位数。目标是算清“我到底能测到多少位有效精度”。</p>
+        </div>
+        <div class="meta"><b>产出</b>误差预算表</div>
+      </article>
+
+      <article class="step">
+        <div class="idx">05</div>
+        <div>
+          <h3>接口与通信</h3>
+          <p>UART、RS-485、CAN、I2C、SPI、USB、以太网。每个接口都要回答三件事：电平与端接、拓扑与地址、防护与隔离。总线跑不通，九成是端接、共地或时序余量的问题。</p>
+        </div>
+        <div class="meta"><b>产出</b>接口设计对照表</div>
+      </article>
+
+      <article class="step">
+        <div class="idx">06</div>
+        <div>
+          <h3>PCB、EMC 与可制造性</h3>
+          <p>层叠与阻抗、地平面与回流路径、去耦电容的摆放、差分对与等长、ESD/浪涌泄放路径、热设计与铜箔面积、DFM 与测试点。这一步决定板子是“能跑”还是“能卖”。</p>
+        </div>
+        <div class="meta"><b>产出</b>可量产的 PCB</div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">02 / Knowledge Map</span>
+      <h2>八个必须掌握的知识域</h2>
+      <p>每个知识域都对应一组具体的检查项，而不是一句“要重视”。学完一个域，就去清单里勾掉对应条目。</p>
+    </div>
+    <div class="grid g4">
+      <article class="card"><span class="num">A</span><h3>电源完整性</h3><p>电源树、纹波、环路、去耦网络、上下电时序与 PG 级联。</p></article>
+      <article class="card"><span class="num">B</span><h3>时钟与复位</h3><p>晶振负载电容、起振余量、复位阈值、看门狗与掉电检测。</p></article>
+      <article class="card"><span class="num">C</span><h3>信号链与采样</h3><p>分压/分流、运放配置、抗混叠滤波、基准与有效位计算。</p></article>
+      <article class="card"><span class="num">D</span><h3>接口与总线</h3><p>电平标准、端接匹配、隔离、共模范围、地址与拓扑。</p></article>
+      <article class="card"><span class="num">E</span><h3>保护与可靠性</h3><p>ESD、浪涌、反接、过流、过温、降额与失效模式分析。</p></article>
+      <article class="card"><span class="num">F</span><h3>PCB 与回流</h3><p>层叠、参考平面、跨分割、过孔、阻抗与串扰控制。</p></article>
+      <article class="card"><span class="num">G</span><h3>EMC 与 EMI</h3><p>辐射与传导路径、共模电流、滤波与屏蔽、预兼容测试。</p></article>
+      <article class="card"><span class="num">H</span><h3>可制造性</h3><p>DFM 规则、测试点与治具、烧录与校准、BOM 与替代料。</p></article>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">03 / Module Playbook</span>
+      <h2>十个典型硬件模块</h2>
+      <p>几乎每一块板子都由这些模块拼成。手册里每个模块都给出了职责、关键器件、设计要点、常见坑与验证方法。</p>
+    </div>
+    <div class="grid g3">
+      <article class="card"><span class="num">M01</span><h3>Buck 降压电源</h3><p>开关频率、电感与输出电容、反馈分压、布局回流面积。</p><a class="more" href="modules.html#m01">查看要点 →</a></article>
+      <article class="card"><span class="num">M02</span><h3>LDO 线性电源</h3><p>压差、静态电流、热耗与散热铜箔、输出电容 ESR 要求。</p><a class="more" href="modules.html#m02">查看要点 →</a></article>
+      <article class="card"><span class="num">M03</span><h3>MCU 最小系统</h3><p>去耦、时钟、复位、BOOT、调试口、未用引脚处理。</p><a class="more" href="modules.html#m03">查看要点 →</a></article>
+      <article class="card"><span class="num">M04</span><h3>复位与看门狗</h3><p>阈值与延时、手动复位、电源监控、防止反复重启。</p><a class="more" href="modules.html#m04">查看要点 →</a></article>
+      <article class="card"><span class="num">M05</span><h3>时钟与晶振</h3><p>负载电容计算、负阻抗余量、走线包地与禁布区。</p><a class="more" href="modules.html#m05">查看要点 →</a></article>
+      <article class="card"><span class="num">M06</span><h3>RS-485 / CAN 接口</h3><p>收发器选型、终端电阻、共模范围、TVS 与隔离。</p><a class="more" href="modules.html#m06">查看要点 →</a></article>
+      <article class="card"><span class="num">M07</span><h3>以太网 PHY</h3><p>MDI 差分对、变压器与 Bob Smith 端接、时钟与复位时序。</p><a class="more" href="modules.html#m07">查看要点 →</a></article>
+      <article class="card"><span class="num">M08</span><h3>ADC 采样前端</h3><p>输入范围、驱动运放、RC 抗混叠、基准与量化误差。</p><a class="more" href="modules.html#m08">查看要点 →</a></article>
+      <article class="card"><span class="num">M09</span><h3>电机 / 负载驱动</h3><p>H 桥与预驱、栅极电阻、续流路径、电流采样与死区。</p><a class="more" href="modules.html#m09">查看要点 →</a></article>
+      <article class="card"><span class="num">M10</span><h3>传感器接口</h3><p>I2C/SPI 上拉与速率、模拟前端、屏蔽与接地参考。</p><a class="more" href="modules.html#m10">查看要点 →</a></article>
+      <article class="card" style="background:linear-gradient(150deg,#eaf0ff,#e6f5f2);border-color:#d3e0ff">
+        <span class="num">→</span><h3>完整手册</h3><p>十个模块的设计要点、踩坑记录与验证方法，一页看完。</p><a class="more" href="modules.html">进入模块手册 →</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">04 / Bench</span>
+      <h2>台面上该有的仪器</h2>
+      <p>硬件是“看得见”的工程。没有合适的仪器，你只能猜。下面按优先级排列，前四件是必备。</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>仪器</th><th>最低建议</th><th>主要用途</th><th>优先级</th></tr></thead>
+        <tbody>
+          <tr><td>数字示波器</td><td>100 MHz / 2 通道，带余辉</td><td>纹波、时序、上升沿、总线解码</td><td><span class="tag">必备</span></td></tr>
+          <tr><td>可调直流电源</td><td>0–30 V / 3 A，带限流</td><td>上电、限流保护、功耗测量</td><td><span class="tag">必备</span></td></tr>
+          <tr><td>数字万用表</td><td>4½ 位，带通断与电容档</td><td>静态工作点、连续性、漏电</td><td><span class="tag">必备</span></td></tr>
+          <tr><td>热风枪 + 烙铁</td><td>可调温，含细尖头</td><td>返修、飞线、改板验证</td><td><span class="tag">必备</span></td></tr>
+          <tr><td>电子负载</td><td>150 W 级别</td><td>电源带载能力、动态响应</td><td><span class="tag blue">强烈建议</span></td></tr>
+          <tr><td>逻辑分析仪</td><td>8 通道 / 24 MHz 以上</td><td>SPI、I2C、UART 协议层调试</td><td><span class="tag blue">强烈建议</span></td></tr>
+          <tr><td>LCR 表</td><td>支持 100 kHz</td><td>电容实际容值、电感饱和特性</td><td><span class="tag warn">进阶</span></td></tr>
+          <tr><td>红外热像仪</td><td>—</td><td>找发热点、验证热设计</td><td><span class="tag warn">进阶</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid g2" style="align-items:start;gap:34px">
+      <div>
+        <div class="section-head" style="margin-bottom:22px">
+          <span class="eyebrow">05 / Method</span>
+          <h2>三条让学习真正有效的建议</h2>
+        </div>
+        <div class="callout">
+          <span class="ico">01</span>
+          <p><strong>抄电路不如抄约束。</strong>看到一份参考设计，先问：输入电压范围多少？负载电流多大？环境温度多少？允许的纹波是多少？约束不同，同一个拓扑的取值完全不同。</p>
+        </div>
+        <div class="callout">
+          <span class="ico">02</span>
+          <p><strong>先定验证方法，再画原理图。</strong>画之前就问自己：这个模块怎么证明它是对的？测哪个点、用什么仪器、合格判据是什么。答不出来说明还没设计清楚。</p>
+        </div>
+        <div class="callout">
+          <span class="ico">03</span>
+          <p><strong>一个模块，一张评审清单。</strong>把踩过的坑固化进清单，下次画图时逐条对照。清单比记忆力可靠，也是团队里最有价值的资产。</p>
+        </div>
+      </div>
+      <div>
+        <div class="section-head" style="margin-bottom:22px">
+          <span class="eyebrow">06 / First Board</span>
+          <h2>首板上电九步法</h2>
+          <p>新板到手别急着插电。按顺序走，能省掉大量返修。</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>动作</th><th>判据</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>目视 + 万用表测电源对地电阻</td><td>无短路，阻值符合预期</td></tr>
+              <tr><td>2</td><td>限流上电，先空载</td><td>输入电流在静态范围</td></tr>
+              <tr><td>3</td><td>逐轨测输出电压与纹波</td><td>电压 ±3% 内，纹波达标</td></tr>
+              <tr><td>4</td><td>测上电时序与 PG</td><td>顺序正确，无反复抖动</td></tr>
+              <tr><td>5</td><td>测复位与 BOOT 电平</td><td>复位释放正常，BOOT 正确</td></tr>
+              <tr><td>6</td><td>连调试器读 ID</td><td>能识别芯片</td></tr>
+              <tr><td>7</td><td>烧录点灯程序</td><td>最小功能跑通</td></tr>
+              <tr><td>8</td><td>逐模块加负载、测温度</td><td>温升在降额范围内</td></tr>
+              <tr><td>9</td><td>通信接口回环测试</td><td>误码率、眼图达标</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">07 / FAQ</span>
+      <h2>调试现场最常问的八个问题</h2>
+      <p>完整版（含排查顺序与判据）在调试问答页。</p>
+    </div>
+    <div class="grid g2">
+      <div>
+        <details class="faq" open>
+          <summary>上电后电源没有输出，第一个该测哪里？</summary>
+          <div class="body"><p>先测使能脚（EN）电平，再测输入电压是否真的到了芯片引脚。八成的“没输出”是使能没拉高、输入被前级限流、或反馈分压虚焊。</p></div>
+        </details>
+        <details class="faq">
+          <summary>电源纹波超标，怎么定位是开关噪声还是负载噪声？</summary>
+          <div class="body"><p>空载与满载各测一次。空载仍大 → 环路或布局；满载才大 → 输入电容/电感不足或地弹。注意探头必须用弹簧地环，长地线本身会引入几十 mV 假纹波。</p></div>
+        </details>
+        <details class="faq">
+          <summary>MCU 不启动，如何快速定位？</summary>
+          <div class="body"><p>按“电—钟—复—口”顺序：供电是否全部到位、晶振是否起振、复位是否释放、调试口能否识别。任一步断掉就停在那里，不要跳步。</p></div>
+        </details>
+        <details class="faq">
+          <summary>RS-485 通信偶发误码，先怀疑什么？</summary>
+          <div class="body"><p>先看共地与共模电压，再看终端电阻是否只在两端、是否多余。长线两端不共地时的共模漂移是最常见的根因，隔离收发器往往比换线更有效。</p></div>
+        </details>
+      </div>
+      <div>
+        <details class="faq">
+          <summary>ADC 读数一直在跳，是芯片坏了吗？</summary>
+          <div class="body"><p>几乎不是。先看基准是否干净、采样保持电容驱动是否足够、模拟地与数字地是否在敏感处被大电流污染。用示波器看输入端真实波形，比看读数有用。</p></div>
+        </details>
+        <details class="faq">
+          <summary>板子局部发热严重，怎么判断是否超规格？</summary>
+          <div class="body"><p>用热像仪读器件表面温度，加上 datasheet 的 θJA 反推结温，再对照降额要求（一般结温不超过最大值的 80%）。别用“摸着烫”当判据。</p></div>
+        </details>
+        <details class="faq">
+          <summary>辐射发射预测试超标，先改电路还是先改 PCB？</summary>
+          <div class="body"><p>先定位频点归属哪个模块（关掉/旁路逐个验证），再决定。高频窄带通常是时钟或开关电源，宽带往往是接口线缆的共模电流——后者改共模电感与接地更有效。</p></div>
+        </details>
+        <details class="faq">
+          <summary>参考设计能直接照抄吗？</summary>
+          <div class="body"><p>拓扑可以抄，取值不能。器件参数由输入范围、负载、温度和成本共同决定。抄之前先把参考设计的约束条件还原出来，再判断是否覆盖你的场景。</p></div>
+        </details>
+      </div>
+    </div>
+    <div class="cta-row" style="margin-top:26px">
+      <a class="btn btn-primary" href="faq.html">看完整调试问答 →</a>
+      <a class="btn" href="calculators.html">用计算器算一遍</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="fgrid">
+      <div>
+        <a class="brand" href="index.html">
+          <span class="brand-mark" aria-hidden="true">HW</span>
+          <span>HW Module Design Learning<small>硬件模块设计学习</small></span>
+        </a>
+        <p>一套面向电子工程师、嵌入式开发者与电子类专业学生的模块化硬件设计学习资料。内容持续更新。</p>
+      </div>
+      <div>
+        <h4>学习</h4>
+        <a href="index.html#path">六阶段学习路径</a>
+        <a href="modules.html">十个典型模块</a>
+        <a href="faq.html">调试问答</a>
+      </div>
+      <div>
+        <h4>工具</h4>
+        <a href="checklist.html">设计评审清单</a>
+        <a href="calculators.html">工程计算器</a>
+        <a href="index.html#path">学习方法</a>
+      </div>
+    </div>
+    <div class="bottom">
+      <span>© 2026 HW Module Design Learning</span>
+      <span>内容供学习参考，实际设计请以器件 datasheet 与相关标准为准</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
