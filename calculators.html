@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>硬件工程计算器 — 分压 / LDO 热耗 / RC 滤波 / 微带阻抗 / 走线载流 | HW Module Design Learning</title>
-<meta name="description" content="六个常用的硬件设计计算器：电阻分压与反算、LDO 功耗与结温、RC 低通截止频率、微带线特性阻抗、IPC-2221 走线载流线宽、上升时间与带宽换算。打开即用，无需注册。">
-<meta name="keywords" content="分压电阻计算,LDO功耗计算,结温计算,RC滤波截止频率,微带线阻抗计算,走线宽度计算,IPC-2221,上升时间带宽">
+<title>硬件工程计算器 — 分压 / LDO 热耗 / RC 滤波 / 微带阻抗 / 走线载流 / Buck 电感选型 | HW Module Design Learning</title>
+<meta name="description" content="七个常用的硬件设计计算器：电阻分压与反算、LDO 功耗与结温、RC 低通截止频率、微带线特性阻抗、IPC-2221 走线载流线宽、上升时间与带宽换算、Buck 功率电感选型（纹波、峰值电流、Isat 降额）。打开即用，无需注册。">
+<meta name="keywords" content="分压电阻计算,LDO功耗计算,结温计算,RC滤波截止频率,微带线阻抗计算,走线宽度计算,IPC-2221,上升时间带宽,Buck电感计算,电感选型,纹波电流计算,饱和电流Isat">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://torylin1992-coder.github.io/hw-module-design-learning/calculators.html">
 <meta property="og:url" content="https://torylin1992-coder.github.io/hw-module-design-learning/calculators.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="HW Module Design Learning">
-<meta property="og:title" content="硬件工程计算器 — 六个常用在线估算工具">
-<meta property="og:description" content="分压、LDO 热耗、RC 滤波、微带阻抗、走线载流、上升时间带宽，一页算完。">
+<meta property="og:title" content="硬件工程计算器 — 七个常用在线估算工具">
+<meta property="og:description" content="分压、LDO 热耗、RC 滤波、微带阻抗、走线载流、上升时间带宽，以及 Buck 功率电感选型，一页算完。">
 <link rel="stylesheet" href="assets/style.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231550e8'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='13' font-weight='bold' fill='white' text-anchor='middle'%3EHW%3C/text%3E%3C/svg%3E">
 <script type="application/ld+json">
@@ -20,7 +20,7 @@
   "@context": "https://schema.org",
   "@type": "WebApplication",
   "name": "硬件工程计算器",
-  "description": "电阻分压与反算、LDO 功耗与结温、RC 低通截止频率、微带线特性阻抗、IPC-2221 走线载流线宽、上升时间与带宽换算。",
+  "description": "电阻分压与反算、LDO 功耗与结温、RC 低通截止频率、微带线特性阻抗、IPC-2221 走线载流线宽、上升时间与带宽换算、Buck 功率电感选型（纹波电流、峰值电流、Isat 降额）。",
   "inLanguage": "zh-CN",
   "applicationCategory": "UtilitiesApplication",
   "operatingSystem": "Any",
@@ -178,25 +178,68 @@
   <p class="hint" id="bw-note"></p>
 </section>
 
+<section class="calc" data-calc="buck" aria-labelledby="c7">
+  <h2 id="c7">7 · 功率电感选型（Buck）</h2>
+  <p class="formula">L<sub>min</sub> = V<sub>OUT</sub>(1 − D) / (k<sub>R</sub>·I<sub>OUT</sub>·f<sub>SW</sub>)　|　ΔI<sub>L</sub> = V<sub>OUT</sub>(1 − D) / (L·f<sub>SW</sub>)　|　I<sub>pk</sub> = I<sub>OUT</sub> + ΔI<sub>L</sub>/2</p>
+  <p>先由纹波系数定电感量，再用最坏工况的峰值、有效值、温升三档判据筛型号，最后按磁芯材料的降额率把 I<sub>sat</sub> 折回 25 °C 对照手册。<b>判断饱和用峰值电流，不是平均值。</b></p>
+  <p class="grp">工况参数</p>
+  <div class="fields">
+    <div class="field"><label for="bi-vin">输入 VIN (V)</label><input id="bi-vin" type="number" step="any" value="12"></div>
+    <div class="field"><label for="bi-vinmax">最高输入 VIN,max (V)</label><input id="bi-vinmax" type="number" step="any" value="13.2"></div>
+    <div class="field"><label for="bi-vout">输出 VOUT (V)</label><input id="bi-vout" type="number" step="any" value="3.3"></div>
+    <div class="field"><label for="bi-iout">负载 IOUT (A)</label><input id="bi-iout" type="number" step="any" value="3"></div>
+    <div class="field"><label for="bi-fsw">开关频率 fSW (kHz)</label><input id="bi-fsw" type="number" step="any" value="500"></div>
+    <div class="field"><label for="bi-kr">纹波系数 kR (%)</label><input id="bi-kr" type="number" step="any" value="30"></div>
+  </div>
+  <p class="grp">候选器件与降额</p>
+  <div class="fields">
+    <div class="field"><label for="bi-l">已选电感 L (µH)</label><input id="bi-l" type="number" step="any" value="10"></div>
+    <div class="field"><label for="bi-isat">手册 Isat@25°C (A)</label><input id="bi-isat" type="number" step="any" value="6.2"></div>
+    <div class="field"><label for="bi-dcr">直流电阻 DCR (mΩ)</label><input id="bi-dcr" type="number" step="any" value="24"></div>
+    <div class="field"><label for="bi-rth">热阻 Rth_L (°C/W)</label><input id="bi-rth" type="number" step="any" value="45"></div>
+    <div class="field"><label for="bi-kl">高温感量保留 (%)</label><input id="bi-kl" type="number" step="any" value="70"></div>
+    <div class="field"><label for="bi-margin">电流余量 (%)</label><input id="bi-margin" type="number" step="any" value="20"></div>
+    <div class="field"><label for="bi-core">磁芯材料</label>
+      <select id="bi-core">
+        <option value="0.8" selected>铁氧体（降额 80%）</option>
+        <option value="0.7">合金粉芯（降额 70%）</option>
+        <option value="1">保守取 100%</option>
+      </select>
+    </div>
+  </div>
+  <div class="out">
+    <div><span>占空比 D</span><b id="bi-d">—</b></div>
+    <div><span>目标纹波 ΔI<sub>L</sub></span><b id="bi-ripple">—</b></div>
+    <div><span>最小电感 L<sub>min</sub></span><b id="bi-lmin">—</b></div>
+    <div><span>建议标称值 (E12)</span><b id="bi-lrec">—</b></div>
+    <div><span>标称纹波</span><b id="bi-actual">—</b></div>
+    <div><span>最坏纹波 ΔI<sub>L,w</sub></span><b id="bi-ripplew">—</b></div>
+    <div><span>标称峰值 I<sub>pk</sub></span><b id="bi-ipk">—</b></div>
+    <div><span>最坏峰值 I<sub>pk,w</sub></span><b id="bi-ipkw">—</b></div>
+    <div><span>谷值电流 I<sub>valley</sub></span><b id="bi-ivly">—</b></div>
+    <div><span>标称 I<sub>rms</sub></span><b id="bi-irms">—</b></div>
+    <div><span>最坏 I<sub>rms,w</sub></span><b id="bi-irmsw">—</b></div>
+    <div><span>所需 Isat @25°C</span><b id="bi-isatreq">—</b></div>
+    <div><span>铜损 P<sub>DCR</sub></span><b id="bi-pdcr">—</b></div>
+    <div><span>估算温升 ΔT</span><b id="bi-dt">—</b></div>
+  </div>
+  <p class="hint" id="bi-note"></p>
+  <p style="margin-top:16px">完整推导、三档判据式与 12 V→3.3 V / 3 A 逐条算例见：</p>
+  <div class="cta-row" style="margin-top:10px">
+    <a class="btn btn-primary" href="inductor-selection.html">打开《降压变换器电感选型计算说明书》 →</a>
+    <a class="btn" href="assets/buck-inductor-selection-spec.docx" download>下载 .docx 原件</a>
+  </div>
+</section>
+
 <div class="callout warn">
   <span class="ico">!</span>
-  <p>所有公式都是工程近似，用于快速估算与量级判断。微带阻抗、载流能力受板材、阻焊、铜箔粗糙度、散热条件影响，最终请以板厂或场求解器结果为准。</p>
+  <p>所有公式都是工程近似，用于快速估算与量级判断。微带阻抗、载流能力受板材、阻焊、铜箔粗糙度、散热条件影响，最终请以板厂或场求解器结果为准。电感计算按同步 Buck、CCM、理想开关推导，未计入开关损耗、二极管压降与磁芯损耗，实际温升请以厂家曲线和实测为准。</p>
 </div>
 
 <div class="callout">
   <span class="ico">→</span>
   <p>算完取值，去 <a href="modules.html">模块手册</a> 对一遍设计要点，再用 <a href="checklist.html">评审清单</a> 逐条确认。</p>
 </div>
-
-<section class="calc" aria-labelledby="c7">
-  <h2 id="c7">7 · 功率电感选型（Buck）</h2>
-  <p class="formula">L = V<sub>OUT</sub>(1 − V<sub>OUT</sub>/V<sub>IN</sub>) / (k<sub>R</sub>·I<sub>OUT</sub>·f<sub>SW</sub>)　|　三档判据：I<sub>sat</sub> / I<sub>rms</sub> / ΔT</p>
-  <p>电感选型不是套一个公式就完事：先由纹波系数定电感量，再用最坏工况的峰值、有效值、温升三档判据筛型号，最后按磁芯材料的降额率把 I<sub>sat</sub> 折回 25 °C 对照手册。完整推导、判据式与 12 V→3.3 V / 3 A 算例见：</p>
-  <div class="cta-row" style="margin-top:4px">
-    <a class="btn btn-primary" href="inductor-selection.html">打开《降压变换器电感选型计算说明书》 →</a>
-    <a class="btn" href="assets/buck-inductor-selection-spec.docx" download>下载 .docx 原件</a>
-  </div>
-</section>
 
 </div>
 </main>

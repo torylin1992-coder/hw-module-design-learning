@@ -366,6 +366,11 @@
     <li><span class="n">07</span><div><b>复核与降额</b>核对厂商手册定义、复核 R<sub>th_L</sub> 与 δ、留 PCB 与热余量</div></li>
   </ol>
 
+  <div class="callout">
+    <span class="ico">→</span>
+    <p>第 01~06 步可以在 <a href="calculators.html#c7">工程计算器 · 7 功率电感选型</a> 里一次算完：填 V<sub>IN</sub> / V<sub>OUT</sub> / I<sub>OUT</sub> / f<sub>SW</sub> / k<sub>R</sub>，直接给出 L<sub>min</sub>、E12 标称值、实际纹波、I<sub>pk</sub>、I<sub>rms</sub> 与所需的 I<sub>sat</sub>@25 °C，再拿候选型号的手册逐项对照。</p>
+  </div>
+
   <h3>7.2 纹波系数 k<sub>R</sub> 的选取</h3>
   <p>k<sub>R</sub> = ΔI<sub>L</sub> / I<sub>OUT</sub> 是设计自由度的核心，工程经验范围 0.20~0.40：</p>
   <div class="table-wrap">
@@ -607,7 +612,7 @@
   <div class="cta-row">
     <a class="btn btn-primary" href="assets/buck-inductor-selection-spec.docx" download>下载 电感选型计算说明书.docx</a>
     <a class="btn" href="modules.html#m01">回看 M01 Buck 模块要点</a>
-    <a class="btn btn-ghost" href="calculators.html">用工程计算器验算</a>
+    <a class="btn btn-ghost" href="calculators.html#c7">用计算器算一遍</a>
   </div>
 </section>
 

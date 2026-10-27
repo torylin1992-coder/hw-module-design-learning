@@ -211,6 +211,137 @@
     if (note) note.textContent = "经验值：上升沿越快，需要关注的带宽越高。走线长度接近上表临界长度（约 tr/6 传播时间）时，就要按传输线处理并考虑端接。";
   }
 
+  /* ---------------- 7. buck inductor selection ---------------- */
+  var E12 = [1, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2];
+
+  function fx(v) {
+    return isFinite(v) ? v.toFixed(2) : "—";
+  }
+
+  function pickE12(uh) {
+    if (!isFinite(uh) || uh <= 0) return NaN;
+    var start = Math.floor(Math.log10(uh)) - 1;
+    for (var e = start; e <= start + 2; e++) {
+      var base = Math.pow(10, e);
+      for (var i = 0; i < E12.length; i++) {
+        var v = E12[i] * base;
+        if (v >= uh * 0.999) return v;
+      }
+    }
+    return uh;
+  }
+
+  function calcBuck() {
+    var ids = ["bi-d", "bi-ripple", "bi-lmin", "bi-lrec", "bi-actual",
+               "bi-ripplew", "bi-ipk", "bi-ipkw", "bi-ivly", "bi-irms", "bi-irmsw",
+               "bi-isatreq", "bi-pdcr", "bi-dt"];
+    var vin = num("bi-vin"), vout = num("bi-vout"), iout = num("bi-iout");
+    var fswK = num("bi-fsw"), kr = num("bi-kr");
+    var note = document.getElementById("bi-note");
+    var ok = [vin, vout, iout, fswK, kr].every(isFinite) &&
+             vin > 0 && vout > 0 && iout > 0 && fswK > 0 && kr > 0 && vout < vin;
+    if (!ok) {
+      for (var j = 0; j < ids.length; j++) put(ids[j], "—");
+      if (note) note.textContent = "请填入有效参数：VIN 必须大于 VOUT，负载、频率与纹波系数均需大于 0。";
+      return;
+    }
+
+    var fsw = fswK * 1e3;
+    var D = vout / vin;
+    var dILt = (kr / 100) * iout;                       // A, 目标纹波
+    var lmin = (vout * (1 - D)) / (dILt * fsw) * 1e6;   // µH
+    var rec = pickE12(lmin);
+
+    var lIn = num("bi-l");
+    var hasL = isFinite(lIn) && lIn > 0;
+    var lUse = hasL ? lIn : rec;
+    var dIL = (vout * (1 - D)) / (lUse * 1e-6 * fsw);   // A, 标称纹波
+    var ipk = iout + dIL / 2;
+    var ivly = iout - dIL / 2;
+    var irms = Math.sqrt(iout * iout + (dIL * dIL) / 12);
+
+    /* 最坏工况：最高输入电压 + 电感量高温衰减 */
+    var vinMax = num("bi-vinmax");
+    if (!isFinite(vinMax) || vinMax < vin) vinMax = vin;
+    var kl = num("bi-kl");
+    if (!isFinite(kl) || kl <= 0 || kl > 100) kl = 100;
+    var lWorst = (lUse * kl) / 100;
+    var Dw = vout / vinMax;
+    var dILw = (vout * (1 - Dw)) / (lWorst * 1e-6 * fsw);
+    var ipkw = iout + dILw / 2;
+    var ivlyw = iout - dILw / 2;
+    var irmsw = Math.sqrt(iout * iout + (dILw * dILw) / 12);
+
+    var coreEl = document.getElementById("bi-core");
+    var derate = coreEl ? parseFloat(coreEl.value) : 0.8;
+    var marginPct = num("bi-margin");
+    if (!isFinite(marginPct) || marginPct < 0) marginPct = 0;
+    var isatReq = (ipkw * (1 + marginPct / 100)) / derate;
+
+    var isatHave = num("bi-isat");
+    var hasIsat = isFinite(isatHave) && isatHave > 0;
+    var dcr = num("bi-dcr");
+    var hasDcr = isFinite(dcr) && dcr > 0;
+    var pcu = hasDcr ? irmsw * irmsw * dcr / 1000 : NaN; // W, 按最坏有效值
+    var rth = num("bi-rth");
+    var hasRth = isFinite(rth) && rth > 0;
+    var dTemp = hasDcr && hasRth ? pcu * rth : NaN;
+
+    put("bi-d", fmt(D * 100, 1) + " %");
+    put("bi-ripple", fx(dILt) + " A");
+    put("bi-lmin", fmt(lmin, 2) + " µH");
+    put("bi-lrec", isFinite(rec) ? fmt(rec, 2) + " µH" : "—");
+    put("bi-actual", fx(dIL) + " A");
+    put("bi-ripplew", fx(dILw) + " A");
+    put("bi-ipk", fx(ipk) + " A");
+    put("bi-ipkw", fx(ipkw) + " A");
+    put("bi-ivly", fx(ivly) + " A", ivly <= 0 ? "hot" : "");
+    put("bi-irms", fx(irms) + " A");
+    put("bi-irmsw", fx(irmsw) + " A");
+    put("bi-isatreq", fx(isatReq) + " A",
+        hasIsat ? (isatHave >= isatReq ? "cool" : "hot") : "");
+    put("bi-pdcr", hasDcr ? fmt(pcu * 1000, 0) + " mW" : "—");
+    put("bi-dt", isFinite(dTemp) ? fmt(dTemp, 1) + " °C" : "—",
+        isFinite(dTemp) ? (dTemp > 40 ? "hot" : "cool") : "");
+
+    if (note) {
+      var msg = [];
+      msg.push(hasL
+        ? "按 " + fmt(lUse, 2) + " µH 计：标称 ΔI_L = " + fmt(dIL, 2) +
+          " A；最坏工况（" + fmt(vinMax, 1) + " V 输入、感量降到 " + fmt(kl, 0) +
+          "%）为 " + fmt(dILw, 2) + " A。"
+        : "未填电感量，暂按 E12 标称值 " + fmt(rec, 2) + " µH 计算；要命中 " +
+          fmt(kr, 0) + "% 纹波，L_min = " + fmt(lmin, 2) + " µH。");
+      if (hasIsat) {
+        msg.push(isatHave >= isatReq
+          ? "饱和判据通过：手册 Isat " + fmt(isatHave, 1) + " A ≥ 需求 " + fmt(isatReq, 2) +
+            " A（最坏峰值 " + fmt(ipkw, 2) + " A × 余量 " + fmt(marginPct, 0) +
+            "% ÷ 高温保留 " + fmt(derate * 100, 0) + "%）。"
+          : "饱和判据不通过：需求 " + fmt(isatReq, 2) + " A，手册只有 " + fmt(isatHave, 1) +
+            " A，差 " + fmt(isatReq - isatHave, 2) + " A。换更大 Isat 的型号，或降低 IOUT / 加大感量。");
+      } else {
+        msg.push("按最坏峰值 " + fmt(ipkw, 2) + " A、余量 " + fmt(marginPct, 0) + "%、高温保留 " +
+                 fmt(derate * 100, 0) + "% 计，手册 25 °C 的 Isat 至少要 " + fmt(isatReq, 2) + " A。");
+      }
+      var ratio = dIL / iout;
+      if (ratio > 0.4) {
+        msg.push("标称纹波系数 " + fmt(ratio * 100, 0) + "%，高于推荐区间 20%~40%，磁芯损耗与输出纹波都会上来，建议加大感量或提高 fSW。");
+      } else if (ratio < 0.2) {
+        msg.push("标称纹波系数只有 " + fmt(ratio * 100, 0) + "%，低于推荐区间 20%~40%，感量偏大、瞬态响应变慢，可以选更小的标称值。");
+      }
+      if (ivlyw <= 0) {
+        msg.push("最坏工况谷值电流已小于 0，进入 DCM（CCM 公式只是外推），轻载环路特性会变，需确认芯片支持。");
+      }
+      if (isFinite(dTemp)) {
+        msg.push(dTemp > 40
+          ? "温升估算 " + fmt(dTemp, 1) + " °C，超过 40 °C 常规上限，要换更低 DCR 的型号或改善散热。"
+          : "温升估算 " + fmt(dTemp, 1) + " °C（P_DCR × R_th_L），在 40 °C 以内。");
+      }
+      msg.push("判据顺序：先按最坏峰值判饱和，再看 I_rms 与 DCR 的铜损温升，最后对温升曲线留余量。");
+      note.textContent = msg.join(" ");
+    }
+  }
+
   /* ---------------- binding ---------------- */
   var calcMap = {
     divider: calcDivider,
@@ -218,7 +349,8 @@
     rc: calcRc,
     microstrip: calcMicrostrip,
     trace: calcTrace,
-    bw: calcBw
+    bw: calcBw,
+    buck: calcBuck
   };
 
   document.querySelectorAll("[data-calc]").forEach(function (box) {
