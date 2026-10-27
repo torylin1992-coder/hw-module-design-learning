@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>十个典型硬件模块设计要点 — 电源 / 时钟 / 接口 / 采样 / 驱动 | HW Module Design Learning</title>
 <meta name="description" content="Buck、LDO、MCU 最小系统、复位看门狗、晶振时钟、RS-485/CAN、以太网 PHY、ADC 采样前端、电机驱动、传感器接口：十个硬件模块的职责、关键器件、设计要点、常见坑与验证方法。">
-<meta name="keywords" content="Buck电路设计,LDO选型,MCU最小系统,晶振负载电容,RS-485终端电阻,CAN总线,以太网PHY,ADC采样电路,电机驱动,H桥,硬件模块设计">
+<meta name="keywords" content="Buck电路设计,LDO选型,MCU最小系统,晶振负载电容,RS-485终端电阻,CAN总线,以太网PHY,ADC采样电路,电机驱动,H桥,硬件模块设计,BUCK-BOOST,开关电源传递函数,电源拓扑,硬件设计视频">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <link rel="canonical" href="https://torylin1992-coder.github.io/hw-module-design-learning/modules.html">
 <meta property="og:url" content="https://torylin1992-coder.github.io/hw-module-design-learning/modules.html">
@@ -38,6 +38,34 @@
   "author": {
     "@type": "Organization",
     "name": "HW Module Design Learning"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "name": "ROOMVblog #27-BUCK-BOOST电路工作原理与传递函数",
+  "description": "开关电源基本拓扑中的 BUCK-BOOST 电路：电感电流波形、输出电压极性与占空比增益关系、状态空间平均模型与传递函数推导。",
+  "thumbnailUrl": "https://i1.hdslb.com/bfs/archive/1d20113fbf59170b302add38dccd6a7d2aabc97b.jpg",
+  "uploadDate": "2024-03-20",
+  "duration": "PT13M52S",
+  "embedUrl": "https://player.bilibili.com/player.html?bvid=BV1e2421P7xA",
+  "url": "https://www.bilibili.com/video/BV1e2421P7xA/",
+  "inLanguage": "zh-CN",
+  "creator": {
+    "@type": "Person",
+    "name": "ChengVBlog"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "bilibili",
+    "url": "https://www.bilibili.com"
+  },
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "HW Module Design Learning",
+    "url": "https://torylin1992-coder.github.io/hw-module-design-learning/"
   }
 }
 </script>
@@ -128,6 +156,22 @@
     </div>
   </div>
   <p class="role" style="margin-top:16px">要把电感取值算实：<a href="inductor-selection.html">《降压变换器电感选型计算说明书》</a> —— 占空比与纹波推导、最坏工况外推、三档判据、12 V→3.3 V / 3 A 完整算例。</p>
+
+  <figure class="video">
+    <p class="video-lead">配套视频 <span>· 从 Buck 的波形接着往下推，把「D 决定增益」这件事讲到底</span></p>
+    <div class="video-frame">
+      <iframe src="https://player.bilibili.com/player.html?bvid=BV1e2421P7xA&amp;page=1&amp;high_quality=1&amp;danmaku=0&amp;autoplay=0&amp;as_wide=1"
+              title="ROOMVblog #27-BUCK-BOOST电路工作原理与传递函数"
+              loading="lazy" scrolling="no" frameborder="0" allowfullscreen></iframe>
+    </div>
+    <figcaption class="video-meta">
+      <b>BUCK-BOOST 电路工作原理与传递函数</b>
+      <span>ChengVBlog · B 站 · 13:52</span>
+      <span>版权归原作者，本站仅嵌入官方播放器</span>
+      <a href="https://www.bilibili.com/video/BV1e2421P7xA/" target="_blank" rel="noopener noreferrer">在 B 站打开 →</a>
+    </figcaption>
+  </figure>
+  <p class="role" style="margin-top:14px">看的时候抓三件事：电感电流在开关周期内的上升与下降斜率、输出电压极性为什么会反、以及传递函数里的 (1 − D) 是怎么从平均模型推出来的。这三点通了，再看环路补偿的零极点就不会觉得是背公式。</p>
 </section>
 
 <section class="module" id="m02">

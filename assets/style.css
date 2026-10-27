@@ -413,6 +413,40 @@ ul.ticks li::before {
 .block.pit ul.ticks li::before { background: var(--warn); }
 .block.verify ul.ticks li::before { background: var(--teal); }
 
+/* ---- 配套视频（平台播放器嵌入，不自托管） ---- */
+.video { margin: 22px 0 0; padding-top: 18px; border-top: 1px solid var(--line); }
+.video-lead {
+  font-family: var(--mono);
+  font-size: .78rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  margin: 0 0 10px;
+}
+.video-lead span { color: var(--muted); letter-spacing: 0; text-transform: none; font-family: var(--sans); font-size: .84rem; }
+.video-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #0b0f14;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.video-frame iframe { position: absolute; inset: 0; display: block; width: 100%; height: 100%; border: 0; }
+.video-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 10px 0 0;
+  font-size: .86rem;
+  color: var(--muted);
+}
+.video-meta b { color: var(--ink); font-weight: 600; font-size: .92rem; }
+.video-meta a { margin-left: auto; white-space: nowrap; }
+@media (max-width: 560px) { .video-meta a { margin-left: 0; } }
+
 /* table */
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); }
 table { width: 100%; border-collapse: collapse; font-size: .9rem; }
@@ -729,7 +763,7 @@ details.faq .body p:last-child, details.faq .body ul:last-child { margin-bottom:
 }
 
 @media print {
-  .site-head, .site-foot, .chk-bar, .cta-row, .toc, .doc-aside, .doc-tags { display: none !important; }
+  .site-head, .site-foot, .chk-bar, .cta-row, .toc, .doc-aside, .doc-tags, .video { display: none !important; }
   .chap { box-shadow: none; border: 0; padding: 0; margin-bottom: 18px; break-inside: auto; }
   body { background: #fff; font-size: 11pt; }
   .chk-group, .module, .card { box-shadow: none; break-inside: avoid; }
