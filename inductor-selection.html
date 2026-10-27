@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>降压变换器电感选型计算说明书 — Buck 功率电感计算原理、三档判据与完整算例 | HW Module Design Learning</title>
+<meta name="description" content="通用降压 (Buck) 变换器功率电感的选型计算方法：占空比与电流纹波、最坏工况外推、饱和电流/有效值电流/温升三档判据、DCR 温度修正与损耗模型，附 12 V→3.3 V / 3 A 完整算例、校核清单与符号表。">
+<meta name="keywords" content="电感选型,功率电感,Buck电感计算,饱和电流,Isat,Irms,DCR,纹波系数,降压变换器,开关电源设计,电感温升,电感计算说明书">
+<meta name="author" content="HW Module Design Learning">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://torylin1992-coder.github.io/hw-module-design-learning/inductor-selection.html">
+<meta property="og:url" content="https://torylin1992-coder.github.io/hw-module-design-learning/inductor-selection.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="HW Module Design Learning">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="降压变换器电感选型计算说明书">
+<meta property="og:description" content="从占空比、纹波到三档判据：Buck 功率电感的选型计算方法与完整算例。">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1550e8">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231550e8'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='13' font-weight='bold' fill='white' text-anchor='middle'%3EHW%3C/text%3E%3C/svg%3E">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "降压变换器电感选型计算说明书",
+  "alternativeHeadline": "通用降压 (Buck) 电感选型计算器的计算原理与选型准则",
+  "description": "说明通用降压变换器功率电感的选型计算方法：占空比与电流纹波、最坏工况外推、饱和电流/有效值电流/温升三档判据、DCR 温度修正与损耗模型，并给出 12 V→3.3 V / 3 A 完整算例。",
+  "inLanguage": "zh-CN",
+  "version": "1.0",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "HW Module Design Learning",
+    "url": "https://torylin1992-coder.github.io/hw-module-design-learning/"
+  },
+  "about": [
+    "功率电感选型",
+    "Buck 变换器",
+    "饱和电流 Isat",
+    "电感温升",
+    "开关电源损耗模型"
+  ],
+  "author": {
+    "@type": "Organization",
+    "name": "HW Module Design Learning"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "HW Module Design Learning"
+  },
+  "datePublished": "2026-10-27",
+  "dateModified": "2026-10-27"
+}
+</script>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true">HW</span>
+      <span>HW Module Design Learning<small>硬件模块设计学习</small></span>
+    </a>
+    <nav class="nav" aria-label="主导航">
+      <a href="index.html">首页</a>
+      <a href="modules.html">模块手册</a>
+      <a href="checklist.html">评审清单</a>
+      <a href="calculators.html">工程计算器</a>
+      <a href="inductor-selection.html" aria-current="page">电感选型</a>
+      <a href="faq.html">调试问答</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+  <nav class="breadcrumb" aria-label="面包屑"><a href="index.html">首页</a><span>/</span><a href="modules.html#m01">Buck 降压电源</a><span>/</span>电感选型计算说明书</nav>
+  <div class="page-head">
+    <h1>降压变换器电感选型计算说明书</h1>
+    <p>通用降压 (Buck) 电感选型计算器的计算原理与选型准则。回答三个问题：电感要满足哪些电流与温升条件、如何在候选清单里筛出可用型号、计算器里每个公式从哪来。</p>
+    <div class="doc-tags">
+      <span class="tag blue">技术说明书</span>
+      <span class="tag">适用拓扑 · Buck</span>
+      <span class="tag">版本 V1.0</span>
+      <a class="btn btn-ghost" href="assets/buck-inductor-selection-spec.docx" download style="padding:6px 14px;font-size:.85rem">下载原始说明书 (.docx)</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" style="padding-bottom:64px">
+<div class="doc-layout">
+
+<article>
+
+<section class="chap" id="ch0">
+  <span class="chap-num">Abstract</span>
+  <h2>一页结论</h2>
+  <p>如果只记三件事，记这三件：</p>
+  <ul>
+    <li><b>电感量由纹波系数反算</b>：先定 k<sub>R</sub> = ΔI<sub>L</sub> / I<sub>OUT</sub>（工程推荐 0.20~0.40），再由 L = V<sub>OUT</sub>(1 − V<sub>OUT</sub>/V<sub>IN</sub>) / (k<sub>R</sub>·I<sub>OUT</sub>·f<sub>SW</sub>) 求电感量。</li>
+    <li><b>判据必须用最坏工况</b>：V<sub>IN</sub> 取最大值，电感量按 k<sub>L</sub> 降额（典型 0.7），得到的峰值与有效值才是校核依据。</li>
+    <li><b>三档同时通过才可选型</b>：饱和电流（用峰值）、有效值电流、温升（用有效值的平方乘热阻），缺一不可。</li>
+  </ul>
+  <div class="callout warn">
+    <span class="ico">!</span>
+    <p><strong>最容易出错的一步：</strong>用平均电流或标称额定电流判断饱和。磁芯饱和由瞬时磁场决定，必须用最坏工况的<strong>峰值</strong>电流，且 Isat 还要按温度降额（δ 通常 10%~35%）折回 25 °C 再去对照手册值。</p>
+  </div>
+</section>
+
+<section class="chap" id="ch1">
+  <span class="chap-num">Chapter 01</span>
+  <h2>第 1 章 绪论</h2>
+  <p>本章说明编写目的、适用范围与全文符号约定。</p>
+
+  <h3>1.1 编写目的</h3>
+  <p>本说明书用于说明通用降压 (Buck) 变换器中功率电感 (power inductor) 的选型计算方法，并配套一份可直接使用的 Excel 计算器（通用降压电感选型计算器.xlsx）。说明书回答三个问题：</p>
+  <ul>
+    <li><b>算多少</b> —— 给定 V<sub>IN</sub>、V<sub>OUT</sub>、I<sub>OUT</sub>、f<sub>SW</sub> 与目标纹波系数，电感需要满足哪些电流与温升条件；</li>
+    <li><b>怎么选</b> —— 如何在候选电感清单中筛选出同时满足饱和、有效值与温升三档判据的型号；</li>
+    <li><b>怎么验</b> —— 计算器里每个公式的来源、单位换算与适用边界是什么。</li>
+  </ul>
+
+  <h3>1.2 适用范围</h3>
+  <p>本说明书与配套计算器适用于降压型 (Buck) 及其衍生拓扑（含集成开关与控制器 + 外置 MOSFET 两种形态），并覆盖两种占空比情形：</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>拓扑情形</th><th>判据</th><th>占空比范围</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>常规降压</td><td>V<sub>IN</sub> &gt; V<sub>OUT</sub></td><td>D &lt; 0.5</td><td>最常见，V<sub>IN</sub> 到 V<sub>OUT</sub> 单调降压</td></tr>
+        <tr><td>升压型降压</td><td>V<sub>IN</sub> &lt; V<sub>OUT</sub></td><td>D &gt; 0.5</td><td>输入跌落时仍要维持输出，D 可能接近 1</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>不适用于隔离拓扑（反激、正激）、升降压 (Buck-Boost)、以及工作在 PFM / 轻载打嗝模式的工况（见<strong>第 9 章</strong>局限说明）。</p>
+
+  <h3>1.3 术语与符号</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>符号</th><th>含义</th><th>单位</th></tr></thead>
+      <tbody>
+        <tr><td>V<sub>IN</sub></td><td>输入电压（区分典型值 V<sub>IN,typ</sub> 与最大值 V<sub>IN,max</sub>）</td><td>V</td></tr>
+        <tr><td>V<sub>OUT</sub></td><td>输出电压</td><td>V</td></tr>
+        <tr><td>I<sub>OUT</sub></td><td>最大负载电流（= 电感电流直流分量）</td><td>A</td></tr>
+        <tr><td>f<sub>SW</sub></td><td>开关频率</td><td>kHz / MHz</td></tr>
+        <tr><td>L</td><td>电感量标称值</td><td>µH</td></tr>
+        <tr><td>D</td><td>占空比（高边导通时间占比）</td><td>—</td></tr>
+        <tr><td>D′</td><td>关断比，D′ = 1 − D</td><td>—</td></tr>
+        <tr><td>ΔI<sub>L</sub></td><td>电感电流纹波（峰峰值）</td><td>A</td></tr>
+        <tr><td>I<sub>L,PK</sub></td><td>电感峰值电流</td><td>A</td></tr>
+        <tr><td>I<sub>L,MIN</sub></td><td>电感谷值电流</td><td>A</td></tr>
+        <tr><td>I<sub>L,rms</sub></td><td>电感电流有效值</td><td>A</td></tr>
+        <tr><td>k<sub>R</sub></td><td>纹波系数，k<sub>R</sub> = ΔI<sub>L</sub> / I<sub>OUT</sub></td><td>—</td></tr>
+        <tr><td>k<sub>L</sub></td><td>电感有效系数（饱和 / 温升后剩余电感比例）</td><td>—</td></tr>
+        <tr><td>DCR</td><td>电感直流电阻</td><td>mΩ</td></tr>
+        <tr><td>I<sub>sat</sub></td><td>饱和电流额定值（一般标 @25 °C）</td><td>A</td></tr>
+        <tr><td>I<sub>rms</sub></td><td>额定有效值电流（一般以 40 °C 温升为条件）</td><td>A</td></tr>
+        <tr><td>R<sub>th_L</sub></td><td>电感自身热阻</td><td>°C/W</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="chap" id="ch2">
+  <span class="chap-num">Chapter 02</span>
+  <h2>第 2 章 电感在降压变换器中的作用与选型总原则</h2>
+  <p>先明确电感在电路中的角色，再确立选型的统一口径。</p>
+
+  <h3>2.1 电感的三个作用</h3>
+  <p>在电流模式或电压模式控制的降压变换器中，功率电感承担三个功能：</p>
+  <ul>
+    <li><b>储能与续流</b>：开关管关断期间，电感释放储能，维持负载电流连续，使输出电流平滑；</li>
+    <li><b>决定纹波</b>：电感量与开关频率共同决定电流纹波 ΔI<sub>L</sub>，进而决定输出纹波、EMI 频谱与损耗；</li>
+    <li><b>构成一阶滤波</b>：与输出电容共同构成 LC 低通，抑制开关纹波向负载传递。</li>
+  </ul>
+
+  <h3>2.2 选型总原则</h3>
+  <p>电感选型是多约束折中问题，核心矛盾是「体积 ↔ 损耗 ↔ 电流能力」：</p>
+  <ul>
+    <li>电感量增大 → 纹波减小 → 输出纹波与损耗降低，但体积、DCR、成本上升，且环路带宽受限于 LC 极点；</li>
+    <li>电感量减小 → 体积小、响应快，但纹波、峰值电流、磁芯损耗上升，可能进入 DCM；</li>
+    <li>因此在工程上先由纹波系数 k<sub>R</sub> 定电感量，再由三档电流 / 温升判据校验候选型号是否可用。</li>
+  </ul>
+  <p>配套计算器即按此逻辑组织：第 ③ 区由 k<sub>R</sub> 与 L 算出实际纹波，第 ④ 区外推最坏工况，第 ⑤⑥ 区校验候选电感的三档判据。</p>
+
+  <h3>2.3 三档判据（本说明书的核心口径）</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>判据</th><th>物理意义</th><th>判据式</th><th>不满足的后果</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>① 饱和电流</td>
+          <td>峰值电流不得使磁芯饱和</td>
+          <td>I<sub>sat,hot</sub> ≥ I<sub>L,PK</sub>(最坏) × (1 + 裕量)</td>
+          <td>电感量骤降、电流失控、烧开关管</td>
+        </tr>
+        <tr>
+          <td>② 有效值电流</td>
+          <td>绕组发热不得超额定</td>
+          <td>I<sub>rms,rated</sub> ≥ I<sub>L,rms</sub>(最坏) × (1 + 裕量)</td>
+          <td>绕组绝缘老化、寿命骤降</td>
+        </tr>
+        <tr>
+          <td>③ 温升</td>
+          <td>实际温升不得超允许值</td>
+          <td>ΔT = I<sub>L,rms</sub>² × DCR(热态) × R<sub>th_L</sub> ≤ ΔT<sub>,max</sub></td>
+          <td>局部过热、DCR 进一步上升形成正反馈</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>三档必须同时满足才算通过 —— 这是本计算器给出「✔ 三档判据全部通过」结论的依据。</p>
+</section>
+
+<section class="chap" id="ch3">
+  <span class="chap-num">Chapter 03</span>
+  <h2>第 3 章 占空比与电流纹波的计算</h2>
+  <p>本章给出占空比与电感电流纹波的计算式，这是后续所有电流判据的基础。</p>
+
+  <h3>3.1 占空比 D 的推导</h3>
+  <p>由伏秒平衡 (volt-second balance)：稳态下电感两端电压在一个周期内的积分为零。</p>
+  <p>高边导通期间电感电压为 V<sub>IN</sub> − V<sub>OUT</sub> − I<sub>OUT</sub>·DCR，关断期间为 −V<sub>OUT</sub> − I<sub>OUT</sub>·DCR。令两者对时间加权相等：</p>
+  <div class="eq"><div>(V<sub>IN</sub> − V<sub>OUT</sub> − I<sub>OUT</sub>·DCR) · D · T = (V<sub>OUT</sub> + I<sub>OUT</sub>·DCR) · (1 − D) · T</div></div>
+  <p>整理得 V<sub>IN</sub> &gt; V<sub>OUT</sub> 时：</p>
+  <div class="eq"><div>D = (V<sub>OUT</sub> + I<sub>OUT</sub>·DCR) / V<sub>IN</sub></div></div>
+  <p>对 V<sub>IN</sub> &lt; V<sub>OUT</sub>（升压型降压）情形，同一伏秒平衡给出：</p>
+  <div class="eq"><div>D = V<sub>OUT</sub> / (V<sub>OUT</sub> + I<sub>OUT</sub>·DCR)</div></div>
+  <p>其中 DCR 项为导通损耗带来的直流压降修正，量级通常只有 1%~3%，但在大电流低电压输出（如 1.2 V / 10 A）下不可忽略。计算器中 DCR 以 mΩ 存储，故公式中除以 1000 换算为 Ω。</p>
+  <p class="mono-note">计算器对应格子：选型计算!C35（D）、C45（最坏工况 D_w）。</p>
+
+  <h3>3.2 电流纹波 ΔI<sub>L</sub> 的两种等价写法</h3>
+  <p>纹波有两种等价写法，理解其适用范围是正确选择计算公式的前提。</p>
+
+  <h4>3.2.1 数据手册式（V<sub>IN</sub> &gt; V<sub>OUT</sub> 适用）</h4>
+  <p>TI 等厂商手册给出：</p>
+  <div class="eq"><div>ΔI<sub>L</sub> = V<sub>OUT</sub> × (1 − V<sub>OUT</sub> / V<sub>IN</sub>) / (L × f<sub>SW</sub>)<span class="note">          …… 手册 Eq.6</span></div></div>
+  <p>其来源是：关断期间电感电压幅值为 V<sub>OUT</sub>，持续时间为 (1−D)·T = (1−V<sub>OUT</sub>/V<sub>IN</sub>)/f<sub>SW</sub>，由 ΔI = V·t/L 直接得到。</p>
+
+  <h4>3.2.2 通用式（两种拓扑都成立）</h4>
+  <p>更通用的写法用 V<sub>IN</sub> 与 D 表达：</p>
+  <div class="eq"><div>ΔI<sub>L</sub> = V<sub>IN</sub> × D × (1 − D) / (L × f<sub>SW</sub>)</div></div>
+  <p>两者在 V<sub>IN</sub> &gt; V<sub>OUT</sub> 时严格相等，因为恒等式 V<sub>IN</sub> × D = V<sub>OUT</sub> 成立（忽略 DCR 时）：</p>
+  <div class="eq teal"><div>V<sub>IN</sub> × D × (1 − D) / (L·f<sub>SW</sub>) = V<sub>OUT</sub> × (1 − V<sub>OUT</sub>/V<sub>IN</sub>) / (L·f<sub>SW</sub>)   ✔</div></div>
+  <p>当 V<sub>IN</sub> &lt; V<sub>OUT</sub> 时，手册式不再成立（V<sub>OUT</sub>/V<sub>IN</sub> &gt; 1 会使结果变负），必须使用通用式。这就是计算器用「器件形态」区分两种写法、并且对 V<sub>IN</sub> &lt; V<sub>OUT</sub> 强制走通用式的原因。</p>
+
+  <h4>3.2.3 单位巧算</h4>
+  <p>设 L 以 µH、f<sub>SW</sub> 以 MHz 为单位，则：</p>
+  <div class="eq"><div>ΔI<sub>L</sub> [A] = V<sub>IN</sub> × D × (1−D) / (L[µH] × 1e-6 × f<sub>SW</sub>[MHz] × 1e6)</div><div>             = V<sub>IN</sub> × D × (1−D) / (L[µH] × f<sub>SW</sub>[MHz])</div></div>
+  <p>指数项 1e-6 × 1e6 = 1 恰好相消，结果直接以安培为单位，无需额外换算。计算器输入 f<sub>SW</sub> 用 kHz，故写作 $C$10/1000（kHz→MHz），保持同一巧算。</p>
+
+  <h3>3.3 峰值、谷值与有效值</h3>
+  <div class="eq"><div>I<sub>L,PK</sub>  = I<sub>OUT</sub> + ΔI<sub>L</sub> / 2<span class="note">        …… 手册 Eq.5</span></div><div>I<sub>L,MIN</sub> = I<sub>OUT</sub> − ΔI<sub>L</sub> / 2</div></div>
+  <p>有效值分两种情况：</p>
+  <p><b>CCM</b>（连续导通，I<sub>L,MIN</sub> &gt; 0）：三角波叠加直流，有效值为</p>
+  <div class="eq"><div>I<sub>L,rms</sub> = √( I<sub>OUT</sub>² + ΔI<sub>L</sub>² / 12 )<span class="note">        …… 手册 Eq.4</span></div></div>
+  <p>（ΔI<sub>L</sub>²/12 为三角波纹波分量的均方值）</p>
+  <p><b>DCM</b>（断续导通，I<sub>L,MIN</sub> ≤ 0）：电流在部分时间归零，三角波被截断。若直接用 CCM 公式会高估有效值。计算器采用截断三角波修正：</p>
+  <div class="eq"><div>I<sub>L,rms</sub> = √( I<sub>OUT</sub>² + (ΔI<sub>L</sub>²/12) × (1 − (I<sub>OUT</sub>/(ΔI<sub>L</sub>/2) − 1)² / 3) )</div></div>
+  <p>其中 x = I<sub>OUT</sub>/(ΔI<sub>L</sub>/2) − 1 描述三角波被截断的比例；x = 0（临界 BCM）时修正因子为 1，与 CCM 公式衔接。</p>
+  <p class="mono-note">计算器对应格子：C38 / C39 / C40（标称）、C47 / C48 / C49（最坏）。</p>
+</section>
+
+<section class="chap" id="ch4">
+  <span class="chap-num">Chapter 04</span>
+  <h2>第 4 章 最坏工况的处理</h2>
+  <p>选型必须在全工作范围内成立，本章说明如何由标称点外推到最坏工况。</p>
+
+  <h3>4.1 为什么必须算最坏工况</h3>
+  <p>选型必须在全工作范围内成立，而不仅仅是标称点。对降压变换器：</p>
+  <ul>
+    <li><b>纹波最坏在 V<sub>IN,max</sub></b>：由 ΔI<sub>L</sub> = V<sub>OUT</sub>·(1−V<sub>OUT</sub>/V<sub>IN</sub>)/(L·f<sub>SW</sub>) 对 V<sub>IN</sub> 求导可知，V<sub>IN</sub> 越大 ΔI<sub>L</sub> 越大（D 越小、关断时间越长）。故取 V<sub>IN,max</sub> 计算最坏纹波；</li>
+    <li><b>电感量可能降额</b>：磁芯在直流偏置与温升下电感量下降，取 k<sub>L</sub>（有效系数）描述剩余比例（典型 0.7，即最坏降 30%）。</li>
+  </ul>
+  <p>故最坏纹波为：</p>
+  <div class="eq"><div>ΔI<sub>L,w</sub> = V<sub>OUT</sub> × (1 − V<sub>OUT</sub>/V<sub>IN,max</sub>) / (L × k<sub>L</sub> × f<sub>SW</sub>)<span class="note">           …… V<sub>IN</sub> &gt; V<sub>OUT</sub></span></div></div>
+  <p>L × k<sub>L</sub> 即最坏有效电感。注意 D<sub>w</sub> 也要用 V<sub>IN,max</sub> 重算，保持与 ΔI<sub>L</sub> 自洽（计算器 C45）。</p>
+
+  <h3>4.2 为什么峰值电流是饱和判据的基准</h3>
+  <p>磁芯饱和由瞬时磁场强度决定，而磁场强度正比于瞬时电流。电感电流在一周期内最高点即为 I<sub>L,PK</sub>，故：</p>
+  <ul>
+    <li>饱和判据必须用<strong>峰值</strong>，不能用有效值或平均值；</li>
+    <li>限流保护（逐周期限流）同样以峰值为触发量，故限流的校验也用峰值。</li>
+  </ul>
+
+  <h3>4.3 最坏工况的判据式</h3>
+  <div class="eq"><div>I<sub>L,PK,w</sub>  = I<sub>OUT</sub> + ΔI<sub>L,w</sub> / 2</div><div>I<sub>L,MIN,w</sub> = I<sub>OUT</sub> − ΔI<sub>L,w</sub> / 2</div><div>I<sub>L,rms,w</sub> = √( I<sub>OUT</sub>² + ΔI<sub>L,w</sub>²/12 )   (CCM) 或截断修正 (DCM)</div></div>
+
+  <h3>4.4 饱和电流的温度降额</h3>
+  <p>磁芯材料的饱和磁通密度 B<sub>sat</sub> 随温度上升而下降（不同材料差异很大）。厂商手册给出的 I<sub>sat</sub> 一般标 @25 °C，实际热态下可用值更低。计算器引入降额率 δ：</p>
+  <div class="eq"><div>I<sub>sat,hot</sub> = I<sub>sat</sub>@25°C × (1 − δ)</div></div>
+  <p>所需值则反向折算回 25 °C：</p>
+  <div class="eq"><div>所需 I<sub>sat</sub>@25°C = max( I<sub>L,PK,w</sub> × (1 + k<sub>sat下限</sub>) , 限流约束 ) / (1 − δ)</div></div>
+  <p>降额率参考值：</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>磁芯材料</th><th>典型 δ</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>铁氧体 (Ferrite)</td><td>10%~15%</td><td>B<sub>sat</sub> 温度特性平坦，但 B<sub>sat</sub> 本身较低</td></tr>
+        <tr><td>铁粉芯 (Iron Powder)</td><td>15%~25%</td><td>分布式气隙，软饱和</td></tr>
+        <tr><td>金属粉芯 (Metal Alloy, XAL/XGL)</td><td>20%~35%</td><td>软饱和特性好，但降额明显</td></tr>
+        <tr><td>铁硅铝 (Sendust)</td><td>20%~30%</td><td>综合性能好</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>δ 必须按所选型号的厂商曲线确定，计算器默认 20%，并标注为 ★。</p>
+</section>
+
+<section class="chap" id="ch5">
+  <span class="chap-num">Chapter 05</span>
+  <h2>第 5 章 限流约束与峰值上限</h2>
+  <p>限流保护与电感峰值直接相关，本章给出峰值上限的约束方式。</p>
+
+  <h3>5.1 限流保护与电感峰值的关系</h3>
+  <p>大多数集成降压变换器具备逐周期限流 (cycle-by-cycle current limit)：当检测到的电感峰值电流超过门限 I<sub>LIM</sub> 时，本周期立即关断高边。若电感设计不当，会出现两种失效：</p>
+  <ul>
+    <li><b>正常工作即触发限流</b>：峰值顶到 I<sub>LIM</sub>，导致占空比被压缩、输出电压跌落；</li>
+    <li><b>饱和后电流失控</b>：电感在限流生效前已饱和，电流急剧上升，限流来不及响应。</li>
+  </ul>
+  <p>因此选型需要给限流留出裕量：</p>
+  <div class="eq"><div>I<sub>L,PK,w</sub> ≤ I<sub>LIM</sub> / (1 + k<sub>lim</sub>)</div></div>
+  <p>其中 k<sub>lim</sub> 为限流裕量（建议 10%~20%），用于容纳瞬态过冲、比较器延迟与参数分散。</p>
+
+  <h3>5.2 饱和约束与限流约束取大者</h3>
+  <p>最终对 I<sub>sat</sub> 的需求是两个约束的较大者：</p>
+  <div class="eq"><div>所需 I<sub>sat,hot</sub> = max( I<sub>L,PK,w</sub> × (1 + k<sub>sat</sub>) , I<sub>L,PK,w</sub> × (1 + k<sub>lim</sub>) )</div></div>
+  <p>计算器还给出「★ 起决定作用的约束」，明确指出是饱和约束主导还是限流约束主导，方便设计者判断优化方向（例如降低限流裕量或更换限流点更高的器件）。</p>
+  <p class="mono-note">计算器对应格子：C26（限流门限）、C28（限流裕量）、C51（所需 I<sub>sat</sub>@25°C）、C53（峰值上限）、C54（主导约束）。</p>
+</section>
+
+<section class="chap" id="ch6">
+  <span class="chap-num">Chapter 06</span>
+  <h2>第 6 章 电感的直流电阻与温升</h2>
+  <p>绕组的直流电阻决定铜损与温升，本章给出修正与判据。</p>
+
+  <h3>6.1 DCR 的温度修正</h3>
+  <p>铜电阻随温度近似线性上升：</p>
+  <div class="eq"><div>DCR(T) = DCR@25°C × [ 1 + α × (T − 25) ]</div></div>
+  <p>漆包铜线的温度系数 α ≈ 0.39 %/°C。在环境温度 T<sub>A</sub> 下：</p>
+  <div class="eq"><div>DCR(热态) = DCR@25°C × (1 + 0.0039 × (T<sub>A</sub> − 25))</div></div>
+  <p>注意：严格来说电感绕组温度高于环境温度，DCR 应进一步上升形成正反馈。计算器采用单次修正（用 T<sub>A</sub>），并明确标注此局限（见第 9 章）。</p>
+
+  <h3>6.2 电感铜损与温升</h3>
+  <p>绕组铜损：</p>
+  <div class="eq"><div>P<sub>DCR</sub> = I<sub>L,rms</sub>² × DCR(热态)</div></div>
+  <p>电感温升由热阻模型给出：</p>
+  <div class="eq"><div>ΔT = P<sub>DCR</sub> × R<sub>th_L</sub> = I<sub>L,rms</sub>² × DCR(热态) × R<sub>th_L</sub></div></div>
+  <p>R<sub>th_L</sub> 的取值：厂商手册一般给出，若无则用经验值 40~60 °C/W（小型贴片电感取偏大值）。计算器默认 45 °C/W 并标注 ★。</p>
+  <p>判据为 ΔT ≤ ΔT<sub>,max</sub>，工业级常见 40 °C，消费级可放宽到 60 °C。</p>
+
+  <h3>6.3 为什么用有效值而非峰值</h3>
+  <p>温升是热效应的累积结果，由电流的均方值（即有效值）决定，符合焦耳定律 P = I²R。用峰值会严重高估发热，用平均值会低估。故温升与 I<sub>rms</sub> 判据都以有效值为基准。</p>
+</section>
+
+<section class="chap" id="ch7">
+  <span class="chap-num">Chapter 07</span>
+  <h2>第 7 章 电感选型流程</h2>
+  <p>本章把前述各判据串成一条可执行的选型流程，并给出关键参数的推荐取值。</p>
+
+  <h3>7.1 完整流程</h3>
+  <ol class="flow">
+    <li><span class="n">01</span><div><b>明确工况</b>输入 V<sub>IN,typ</sub> / V<sub>IN,max</sub> / V<sub>OUT</sub> / I<sub>OUT,max</sub> / f<sub>SW</sub></div></li>
+    <li><span class="n">02</span><div><b>由 k<sub>R</sub> 定电感量</b>选 k<sub>R</sub>（推荐 0.20~0.40），反算 L = V<sub>OUT</sub>(1−V<sub>OUT</sub>/V<sub>IN</sub>) / (k<sub>R</sub>·I<sub>OUT</sub>·f<sub>SW</sub>)</div></li>
+    <li><span class="n">03</span><div><b>算标称电流</b>D、ΔI<sub>L</sub>、I<sub>L,PK</sub>、I<sub>L,rms</sub></div></li>
+    <li><span class="n">04</span><div><b>外推最坏工况</b>V<sub>IN,max</sub> + k<sub>L</sub> 降额 → ΔI<sub>L,w</sub>、I<sub>L,PK,w</sub>、I<sub>L,rms,w</sub></div></li>
+    <li><span class="n">05</span><div><b>求需求值</b>所需 I<sub>sat</sub>@25 °C（饱和与限流取大后按 δ 折回）；所需 I<sub>rms</sub> = I<sub>L,rms,w</sub> × (1 + k<sub>irms</sub>)</div></li>
+    <li><span class="n">06</span><div><b>三档校验候选型号</b>① I<sub>sat</sub> ② I<sub>rms</sub> ③ ΔT，全部通过才可选型</div></li>
+    <li><span class="n">07</span><div><b>复核与降额</b>核对厂商手册定义、复核 R<sub>th_L</sub> 与 δ、留 PCB 与热余量</div></li>
+  </ol>
+
+  <h3>7.2 纹波系数 k<sub>R</sub> 的选取</h3>
+  <p>k<sub>R</sub> = ΔI<sub>L</sub> / I<sub>OUT</sub> 是设计自由度的核心，工程经验范围 0.20~0.40：</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>k<sub>R</sub></th><th>电感量</th><th>优点</th><th>缺点</th></tr></thead>
+      <tbody>
+        <tr><td>&lt; 0.20</td><td>大</td><td>纹波小、损耗低、EMI 好</td><td>体积大、成本高、环路慢</td></tr>
+        <tr><td>0.20~0.40</td><td>适中</td><td>推荐区间，折中最优</td><td>—</td></tr>
+        <tr><td>&gt; 0.40</td><td>小</td><td>体积小、响应快</td><td>纹波 / 峰值 / 损耗上升，可能进 DCM</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>计算器给出「④ 纹波系数判定」，对 k<sub>R</sub> 偏离推荐区间给出提示。</p>
+
+  <h3>7.3 工作模式判定</h3>
+  <p>由最坏工况的谷值电流判断：</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>条件</th><th>模式</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>I<sub>L,MIN,w</sub> &gt; 5%×I<sub>OUT</sub></td><td>CCM 连续</td><td>推荐工作区，损耗模型有效</td></tr>
+        <tr><td>0 &lt; I<sub>L,MIN,w</sub> ≤ 5%×I<sub>OUT</sub></td><td>BCM 临界</td><td>边界状态，需留余量</td></tr>
+        <tr><td>I<sub>L,MIN,w</sub> &lt; 0</td><td>DCM 断续</td><td>峰值高、损耗模型不适用，应增大 L 或提高 f<sub>SW</sub></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="chap" id="ch8">
+  <span class="chap-num">Chapter 08</span>
+  <h2>第 8 章 效率与损耗模型</h2>
+  <div class="callout warn">
+    <span class="ico">!</span>
+    <p>本章模型为工程近似，用于快速评估效率与结温，不是厂商手册原文公式。使用时须理解其校准前提。</p>
+  </div>
+
+  <h3>8.1 损耗分解</h3>
+  <p>变换器总损耗分解为：</p>
+  <div class="eq"><div>P<sub>total</sub> = P<sub>HS</sub> + P<sub>LS</sub> + P<sub>SW</sub> + P<sub>fix</sub> + P<sub>IQ</sub> + P<sub>DCR</sub></div></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>损耗项</th><th>公式</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>高边导通</td><td>I<sub>L,rms</sub>² × R<sub>ds_HS</sub> × D</td><td>高边 MOSFET 导通损耗</td></tr>
+        <tr><td>低边导通</td><td>I<sub>L,rms</sub>² × R<sub>ds_LS</sub> × (1−D)</td><td>低边（续流 / 同步整流）导通损耗</td></tr>
+        <tr><td>开关换流</td><td>k<sub>sw</sub> × V<sub>IN</sub> × I<sub>OUT</sub> × f<sub>SW</sub></td><td>见 8.2</td></tr>
+        <tr><td>固定损耗</td><td>E<sub>fix</sub> × f<sub>SW</sub></td><td>见 8.3</td></tr>
+        <tr><td>静态损耗</td><td>V<sub>IN</sub> × I<sub>Q</sub></td><td>芯片自身静态电流</td></tr>
+        <tr><td>电感铜损</td><td>I<sub>L,rms</sub>² × DCR(热态)</td><td>绕组铜损</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>8.2 开关换流损耗 P<sub>SW</sub> = k<sub>sw</sub> × V<sub>IN</sub> × I<sub>OUT</sub> × f<sub>SW</sub> 的来源</h3>
+  <p>开关管在开通 / 关断瞬间，漏源电压 V 与漏极电流 I 存在重叠时间 t<sub>cross</sub>。在这段时间内功率为 P(t) = V(t)·I(t)，若近似线性过渡，则功率随时间呈三角形。</p>
+  <p>单个开关事件的能量 = 三角形面积：</p>
+  <div class="eq"><div>E<sub>cross</sub> = ½ × V<sub>IN</sub> × I<sub>OUT</sub> × (t<sub>r</sub> + t<sub>f</sub>)</div></div>
+  <p>其中 t<sub>r</sub>、t<sub>f</sub> 分别为上升、下降时间。乘以每秒开关次数 f<sub>SW</sub> 得平均功率：</p>
+  <div class="eq"><div>P<sub>SW</sub> = ½ × (t<sub>r</sub> + t<sub>f</sub>) × V<sub>IN</sub> × I<sub>OUT</sub> × f<sub>SW</sub></div></div>
+  <p>定义 k<sub>sw</sub> ≡ ½ × (t<sub>r</sub> + t<sub>f</sub>)，即：</p>
+  <div class="eq"><div>P<sub>SW</sub> = k<sub>sw</sub> × V<sub>IN</sub> × I<sub>OUT</sub> × f<sub>SW</sub></div></div>
+  <p>计算器取 k<sub>sw</sub> = 3.8 ns，对应等效 (t<sub>r</sub> + t<sub>f</sub>) ≈ 7.6 ns。此值无手册原始数据支撑，是按效率曲线校准得到的等效集总值，已并入准 ZVS、死区体二极管导通、C<sub>oss</sub> 充放电等效应。</p>
+
+  <h3>8.3 固定损耗 P<sub>fix</sub> = E<sub>fix</sub> × f<sub>SW</sub> 的来源</h3>
+  <p>每开一次开关，都要消耗一份与控制 / 驱动相关的固定能量 E<sub>fix</sub>，与负载电流基本无关。单位时间内的平均功率 = 每周期固定能量 × 每秒周期数：</p>
+  <div class="eq"><div>P<sub>fix</sub> = E<sub>fix</sub> × f<sub>SW</sub></div></div>
+  <p>E<sub>fix</sub> 由三部分构成：</p>
+  <div class="eq"><div>E<sub>fix</sub> = E<sub>gate</sub> + E<sub>Coss</sub> + E<sub>logic</sub></div></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>分量</th><th>来源</th><th>与什么有关</th></tr></thead>
+      <tbody>
+        <tr><td>门极驱动 E<sub>gate</sub></td><td>Q<sub>g</sub> × V<sub>DRV</sub>（栅极电荷 × 驱动电压）</td><td>与 R<sub>g</sub> 无关（电荷守恒）</td></tr>
+        <tr><td>节点电容 E<sub>Coss</sub></td><td>开关节点寄生电容充放电</td><td>∝ V<sub>IN</sub>²（关键局限）</td></tr>
+        <tr><td>控制逻辑 E<sub>logic</sub></td><td>振荡器、比较器、驱动级静态电流</td><td>与频率相关</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>计算器取 E<sub>fix</sub> = 67 nJ（示意性拆分 50 / 12 / 5 nJ，非手册实测值）。</p>
+
+  <h3>8.4 效率与结温</h3>
+  <div class="eq"><div>P<sub>out</sub> = V<sub>OUT</sub> × I<sub>OUT</sub></div><div>P<sub>in</sub>  = P<sub>out</sub> + P<sub>total</sub></div><div>η     = P<sub>out</sub> / P<sub>in</sub></div></div>
+  <p>结温估算（仅计芯片内损耗，电感铜损散在电感上）：</p>
+  <div class="eq"><div>T<sub>J</sub> = T<sub>A</sub> + (P<sub>HS</sub> + P<sub>LS</sub> + P<sub>SW</sub> + P<sub>fix</sub> + P<sub>IQ</sub>) × R<sub>θJA</sub></div></div>
+  <p>判据：T<sub>J</sub> &lt; T<sub>JW</sub>（热警告）→ ✔；T<sub>JW</sub> ≤ T<sub>J</sub> &lt; T<sub>JSD</sub> → △；T<sub>J</sub> ≥ T<sub>JSD</sub> → ✘。</p>
+</section>
+
+<section class="chap" id="ch9">
+  <span class="chap-num">Chapter 09</span>
+  <h2>第 9 章 模型局限与假设</h2>
+  <p>使用本计算器时必须了解以下局限，避免超出适用边界：</p>
+  <ul>
+    <li><b>未迭代自热</b>：效率表用 T<sub>A</sub> 单次修正 DCR 与 R<sub>ds</sub>，未迭代到收敛。实际结温 / 绕组温度高于 T<sub>A</sub> 会继续抬高电阻，真实效率略低于计算值；</li>
+    <li><b>E<sub>fix</sub> 中的 C<sub>oss</sub> 项 ∝ V<sub>IN</sub>²</b>：被并进常数后，模型只在标定的 V<sub>IN</sub>（约 5 V）附近严格成立；V<sub>IN</sub> 明显偏离时会低估或高估固定损耗；</li>
+    <li><b>k<sub>sw</sub> 与 E<sub>fix</sub> 为校准等效值</b>：换器件或大幅变更 V<sub>IN</sub> 时需重新校准；</li>
+    <li><b>假定 CCM / FPWM</b>：轻载 PFM / 打嗝模式效率更高，本模型不覆盖；</li>
+    <li><b>未含磁芯损耗</b>：高频大纹波下磁芯损耗占比可观，本模型只算铜损；</li>
+    <li><b>未含布局寄生损耗</b>：PCB 走线、寄生电感 / 电容引起的损耗未计入；</li>
+    <li><b>参数准确性</b>：器件库与电感清单中的参数为示例值，必须逐项按厂商手册复核后才能用于正式设计。</li>
+  </ul>
+</section>
+
+<section class="chap" id="ch10">
+  <span class="chap-num">Chapter 10</span>
+  <h2>第 10 章 完整算例</h2>
+  <p>本章以 12 V→3.3 V / 3 A 为例，完整走一遍选型流程。</p>
+
+  <h3>10.1 算例设定</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>参数</th><th>值</th></tr></thead>
+      <tbody>
+        <tr><td>V<sub>IN,typ</sub> / V<sub>IN,max</sub></td><td>12 V / 13.2 V</td></tr>
+        <tr><td>V<sub>OUT</sub></td><td>3.3 V</td></tr>
+        <tr><td>I<sub>OUT,max</sub></td><td>3 A</td></tr>
+        <tr><td>f<sub>SW</sub></td><td>500 kHz</td></tr>
+        <tr><td>候选电感</td><td>SLF12575T-100M4R7（L = 10 µH, I<sub>sat</sub>@25°C = 5.0 A, I<sub>rms</sub> = 4.7 A, DCR = 24 mΩ）</td></tr>
+        <tr><td>设计参数</td><td>k<sub>R</sub> 目标 0.30, k<sub>L</sub> = 0.70, k<sub>sat下限</sub> = 0.20, k<sub>sat建议</sub> = 0.30, k<sub>irms</sub> = 0.20, ΔT<sub>,max</sub> = 40 °C, δ = 0.20, R<sub>th_L</sub> = 45 °C/W</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>10.2 分步计算</h3>
+
+  <h4>Step 1 — 占空比（忽略 DCR 项以简化演示）</h4>
+  <div class="eq"><div>D  = V<sub>OUT</sub> / V<sub>IN</sub> = 3.3 / 12 = 0.275</div><div>D′ = 1 − 0.275 = 0.725</div></div>
+
+  <h4>Step 2 — 标称纹波（两种写法等价）</h4>
+  <div class="eq"><div>手册式: ΔI<sub>L</sub> = 3.3 × (1 − 3.3/12) / (10 µH × 0.5 MHz)</div><div>             = 3.3 × 0.725 / 5 = 0.4785 A</div><div>通用式: ΔI<sub>L</sub> = 12 × 0.275 × 0.725 / (10 × 0.5) = 0.4785 A   ✔ 相等</div></div>
+  <p>k<sub>R</sub> = 0.4785 / 3 = 0.160 → 略低于推荐区间，说明 10 µH 偏大（可选更小感值）。</p>
+
+  <h4>Step 3 — 标称峰值与有效值</h4>
+  <div class="eq"><div>I<sub>L,PK</sub>  = 3 + 0.4785/2 = 3.239 A</div><div>I<sub>L,MIN</sub> = 3 − 0.4785/2 = 2.761 A &gt; 0  → CCM</div><div>I<sub>L,rms</sub> = √(3² + 0.4785²/12) = 3.0033 A</div></div>
+
+  <h4>Step 4 — 最坏工况（V<sub>IN,max</sub> = 13.2 V，L 降至 10 × 0.7 = 7 µH）</h4>
+  <div class="eq"><div>D<sub>w</sub> = 3.3/13.2 = 0.25</div><div>ΔI<sub>L,w</sub> = 13.2 × 0.25 × 0.75 / (10 × 0.7 × 0.5) = 0.7071 A</div><div>I<sub>L,PK,w</sub>  = 3 + 0.7071/2 = 3.354 A</div><div>I<sub>L,MIN,w</sub> = 3 − 0.7071/2 = 2.646 A &gt; 0 → 最坏仍是 CCM</div><div>I<sub>L,rms,w</sub> = √(3² + 0.7071²/12) = 3.0069 A</div></div>
+
+  <h4>Step 5 — 求需求值</h4>
+  <div class="eq"><div>饱和下限需求 = 3.354 × 1.20 = 4.024 A  (限流未约束时)</div><div>折算回 25°C  = 4.024 / (1 − 0.20) = 5.03 A</div><div>所需 I<sub>rms</sub>    = 3.0069 × 1.20 = 3.608 A</div></div>
+
+  <h4>Step 6 — 三档校验（对照候选电感 SLF12575T-100M4R7）</h4>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>判据</th><th>需求</th><th>候选电感值</th><th>结论</th></tr></thead>
+      <tbody>
+        <tr><td>① 饱和（建议值）</td><td>3.354 × 1.30 / 0.8 = 5.45 A</td><td>I<sub>sat</sub>@25°C = 5.0 A</td><td><span class="tag warn">△ 仅满足下限</span></td></tr>
+        <tr><td>② 有效值</td><td>3.608 A</td><td>I<sub>rms</sub> = 4.7 A</td><td><span class="tag">✔ 满足</span></td></tr>
+        <tr><td>③ 温升</td><td>ΔT = 3.0069² × 0.024 × 45 ≈ 9.8 °C</td><td>≤ 40 °C</td><td><span class="tag">✔ 通过</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Step 7 — 结论</h4>
+  <p>① 项仅满足 20% 下限、未达 30% 建议值，若要求更保守裕量应选 I<sub>sat</sub> 更大的型号（例如 XAL7030-103MEB，I<sub>sat</sub> = 6.2 A）。该算例在计算器中可通过「⑥ 三档判定」区直接读出。</p>
+
+  <h3>10.3 计算器操作要点</h3>
+  <ul>
+    <li>在『选型计算』① 区填入 V<sub>IN</sub> / V<sub>OUT</sub> / I<sub>OUT</sub> / f<sub>SW</sub> / L 与各裕量；</li>
+    <li>② 区选「器件形态」—— 集成开关则选型号，自动带出额定 / 限流 / 频率；外置开关则手填限流门限；</li>
+    <li>③④ 区自动算出标称与最坏电流；</li>
+    <li>⑤ 区从『电感清单』下拉选择候选型号，自动带出 I<sub>sat</sub> / I<sub>rms</sub> / DCR；</li>
+    <li>⑥ 区读取三档判定与综合结论；『电感清单』的 J/K/L/M 列可批量对照所有候选型号。</li>
+  </ul>
+</section>
+
+<section class="chap" id="ch11">
+  <span class="chap-num">Chapter 11</span>
+  <h2>第 11 章 校核清单</h2>
+  <p>提交设计前，请逐项确认：</p>
+  <ul class="doc-check">
+    <li>V<sub>IN</sub> 范围（含典型值与最大值）已覆盖全部工作条件；</li>
+    <li>V<sub>OUT</sub> 与 I<sub>OUT,max</sub> 为实际最严苛工况；</li>
+    <li>电感量由 k<sub>R</sub> 反算，k<sub>R</sub> 落在 0.20~0.40；</li>
+    <li>最坏纹波已用 V<sub>IN,max</sub> 与降额后电感 L×k<sub>L</sub> 计算；</li>
+    <li>峰值电流已同时对比饱和约束与限流约束，并取较大者；</li>
+    <li>I<sub>sat</sub> 的定义已按厂商手册确认（L 下降 10% / 20% / 30%，差异可达 30% 以上）；</li>
+    <li>I<sub>sat</sub> 的温度降额率 δ 已按所选磁芯材料曲线确认；</li>
+    <li>I<sub>rms</sub> 额定值的测试条件（温升多少度、是否含铜箔散热）已确认；</li>
+    <li>DCR 已按工作温度修正；</li>
+    <li>R<sub>th_L</sub> 有手册值或合理经验值；</li>
+    <li>温升 ΔT 在允许范围内并留有余量；</li>
+    <li>工作模式为 CCM，或已确认 DCM 下的峰值与损耗可接受；</li>
+    <li>器件库 / 电感清单中的参数已逐个按厂商手册复核（本表内置值为示例）；</li>
+    <li>PCB 布局、附近热源、气隙与饱和直流偏置效应已评估。</li>
+  </ul>
+</section>
+
+<section class="chap" id="apx">
+  <span class="chap-num">Appendix</span>
+  <h2>附录 A　计算器各区与公式对照</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>区</th><th>关键格</th><th>内容</th><th>公式 / 来源</th></tr></thead>
+      <tbody>
+        <tr><td>①</td><td>C6~C17</td><td>输入参数</td><td>用户填写</td></tr>
+        <tr><td>①</td><td>C18~C21</td><td>器件形态 / 拓扑 / 限流 / 型号</td><td>下拉选择</td></tr>
+        <tr><td>②</td><td>C25</td><td>器件额定输出电流</td><td>VLOOKUP 器件库</td></tr>
+        <tr><td>②</td><td>C26</td><td>限流门限</td><td>VLOOKUP 器件库 / 手填</td></tr>
+        <tr><td>②</td><td>C29</td><td>拓扑判定</td><td>按 V<sub>IN</sub>/V<sub>OUT</sub> 自动判断</td></tr>
+        <tr><td>③</td><td>C34</td><td>DCR 热态 (mΩ)</td><td>效率表 C39 × 1000</td></tr>
+        <tr><td>③</td><td>C35</td><td>占空比 D</td><td>第 3.1 节</td></tr>
+        <tr><td>③</td><td>C37</td><td>标称纹波 ΔI<sub>L</sub></td><td>第 3.2 节</td></tr>
+        <tr><td>③</td><td>C38 / 39 / 40 / 41</td><td>I<sub>L,PK</sub> / I<sub>L,MIN</sub> / I<sub>L,rms</sub> / k<sub>R</sub></td><td>第 3.3 节</td></tr>
+        <tr><td>④</td><td>C45~C49</td><td>最坏工况 D<sub>w</sub> 与电流</td><td>第 4 章</td></tr>
+        <tr><td>⑤</td><td>C51</td><td>所需 I<sub>sat</sub>@25°C</td><td>第 4.4 / 5.2 节</td></tr>
+        <tr><td>⑤</td><td>C52</td><td>所需 I<sub>rms</sub></td><td>第 2.3 节</td></tr>
+        <tr><td>⑤</td><td>C54</td><td>起决定作用的约束</td><td>饱和 vs 限流取大</td></tr>
+        <tr><td>⑥</td><td>C67~C74</td><td>三档判定与综合结论</td><td>第 2.3 章</td></tr>
+        <tr><td>效率表</td><td>C31~C45</td><td>损耗分解与效率</td><td>第 8 章</td></tr>
+        <tr><td>效率表</td><td>C49~C52</td><td>结温估算与判定</td><td>第 8.4 节</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 style="margin-top:34px">附录 B　推荐裕量与默认值</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>参数</th><th>默认值</th><th>建议范围</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>k<sub>R</sub> 纹波系数</td><td>0.30</td><td>0.20~0.40</td><td>越小电感越大</td></tr>
+        <tr><td>k<sub>L</sub> 有效系数</td><td>0.70</td><td>0.60~1.00</td><td>0.70 = 最坏降 30%</td></tr>
+        <tr><td>k<sub>sat</sub> 饱和下限</td><td>0.20</td><td>0.20</td><td>行业通用准则</td></tr>
+        <tr><td>k<sub>sat</sub> 饱和建议</td><td>0.30</td><td>0.30~0.50</td><td>更保守</td></tr>
+        <tr><td>k<sub>irms</sub> 有效值裕量</td><td>0.20</td><td>0.20~0.30</td><td>控制绕组温升</td></tr>
+        <tr><td>k<sub>lim</sub> 限流裕量</td><td>0.10</td><td>0.10~0.20</td><td>容纳瞬态过冲</td></tr>
+        <tr><td>ΔT<sub>,max</sub> 允许温升</td><td>40 °C</td><td>40~60 °C</td><td>工业级到消费级</td></tr>
+        <tr><td>δ I<sub>sat</sub> 降额率</td><td>0.20</td><td>0.10~0.35</td><td>按磁芯材料确定</td></tr>
+        <tr><td>R<sub>th_L</sub> 电感热阻</td><td>45 °C/W</td><td>40~60 °C/W</td><td>无手册值时用之</td></tr>
+        <tr><td>α 铜温系数</td><td>0.39 %/°C</td><td>0.39</td><td>漆包铜线典型值</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="chap">
+  <span class="chap-num">Download</span>
+  <h2>取用这份说明书</h2>
+  <p>本页是原文档的网页版，内容一致；如需在本地留存、批注或随设计评审归档，可下载原始 .docx：</p>
+  <div class="cta-row">
+    <a class="btn btn-primary" href="assets/buck-inductor-selection-spec.docx" download>下载 电感选型计算说明书.docx</a>
+    <a class="btn" href="modules.html#m01">回看 M01 Buck 模块要点</a>
+    <a class="btn btn-ghost" href="calculators.html">用工程计算器验算</a>
+  </div>
+</section>
+
+</article>
+
+<aside class="doc-aside" aria-label="本文目录">
+  <h4>目录</h4>
+  <a href="#ch0">一页结论</a>
+  <a href="#ch1">1 · 绪论</a>
+  <a href="#ch2">2 · 电感的作用与选型总原则</a>
+  <a href="#ch3">3 · 占空比与电流纹波</a>
+  <a href="#ch4">4 · 最坏工况的处理</a>
+  <a href="#ch5">5 · 限流约束与峰值上限</a>
+  <a href="#ch6">6 · 直流电阻与温升</a>
+  <a href="#ch7">7 · 电感选型流程</a>
+  <a href="#ch8">8 · 效率与损耗模型</a>
+  <a href="#ch9">9 · 模型局限与假设</a>
+  <a href="#ch10">10 · 完整算例</a>
+  <a href="#ch11">11 · 校核清单</a>
+  <a href="#apx">附录 A / B</a>
+</aside>
+
+</div>
+</div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="fgrid">
+      <div>
+        <a class="brand" href="index.html">
+          <span class="brand-mark" aria-hidden="true">HW</span>
+          <span>HW Module Design Learning<small>硬件模块设计学习</small></span>
+        </a>
+        <p>一套面向电子工程师、嵌入式开发者与电子类专业学生的模块化硬件设计学习资料。内容持续更新。</p>
+      </div>
+      <div>
+        <h4>学习</h4>
+        <a href="index.html#path">六阶段学习路径</a>
+        <a href="modules.html">十个典型模块</a>
+        <a href="faq.html">调试问答</a>
+      </div>
+      <div>
+        <h4>工具</h4>
+        <a href="checklist.html">设计评审清单</a>
+        <a href="calculators.html">工程计算器</a>
+        <a href="inductor-selection.html">电感选型说明书</a>
+      </div>
+    </div>
+    <div class="bottom">
+      <span>© 2026 HW Module Design Learning</span>
+      <span>内容供学习参考，实际设计请以器件 datasheet 与相关标准为准</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var links = [].slice.call(document.querySelectorAll('.doc-aside a'));
+  var secs = links.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+  if (!('IntersectionObserver' in window) || !secs.length) return;
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      links.forEach(function (a) { a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id); });
+    });
+  }, { rootMargin: '-84px 0px -70% 0px', threshold: 0 });
+  secs.forEach(function (s) { io.observe(s); });
+})();
+</script>
+
+</body>
+</html>

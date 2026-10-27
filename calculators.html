@@ -50,6 +50,7 @@
       <a href="modules.html">模块手册</a>
       <a href="checklist.html">评审清单</a>
       <a href="calculators.html" aria-current="page">工程计算器</a>
+      <a href="inductor-selection.html">电感选型</a>
       <a href="faq.html">调试问答</a>
     </nav>
   </div>
@@ -187,6 +188,16 @@
   <p>算完取值，去 <a href="modules.html">模块手册</a> 对一遍设计要点，再用 <a href="checklist.html">评审清单</a> 逐条确认。</p>
 </div>
 
+<section class="calc" aria-labelledby="c7">
+  <h2 id="c7">7 · 功率电感选型（Buck）</h2>
+  <p class="formula">L = V<sub>OUT</sub>(1 − V<sub>OUT</sub>/V<sub>IN</sub>) / (k<sub>R</sub>·I<sub>OUT</sub>·f<sub>SW</sub>)　|　三档判据：I<sub>sat</sub> / I<sub>rms</sub> / ΔT</p>
+  <p>电感选型不是套一个公式就完事：先由纹波系数定电感量，再用最坏工况的峰值、有效值、温升三档判据筛型号，最后按磁芯材料的降额率把 I<sub>sat</sub> 折回 25 °C 对照手册。完整推导、判据式与 12 V→3.3 V / 3 A 算例见：</p>
+  <div class="cta-row" style="margin-top:4px">
+    <a class="btn btn-primary" href="inductor-selection.html">打开《降压变换器电感选型计算说明书》 →</a>
+    <a class="btn" href="assets/buck-inductor-selection-spec.docx" download>下载 .docx 原件</a>
+  </div>
+</section>
+
 </div>
 </main>
 
@@ -210,6 +221,7 @@
         <h4>工具</h4>
         <a href="checklist.html">设计评审清单</a>
         <a href="calculators.html">工程计算器</a>
+        <a href="inductor-selection.html">电感选型说明书</a>
         <a href="index.html#path">学习方法</a>
       </div>
     </div>
