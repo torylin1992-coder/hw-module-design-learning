@@ -103,13 +103,13 @@
       <thead><tr><th>指标</th><th>算式</th><th>按本图参数</th></tr></thead>
       <tbody>
         <tr><td>电流设定跨阻</td><td>K = 1 / (G · R<sub>6</sub>)</td><td>1 / (20 × 0.02 Ω) = <b>2.5 A/V</b></td></tr>
-        <tr><td>理论满量程（D = 100%）</td><td>I = K · V<sub>PWM</sub></td><td>2.5 × 3.0 V = <b>7.50 A</b></td></tr>
-        <tr><td>设计满量程</td><td>软件限 D<sub>max</sub></td><td>5.00 A，对应 V<sub>DIM</sub> = 2.0 V，<b>D<sub>max</sub> = 66.7%</b></td></tr>
-        <tr><td>调光分辨率</td><td>N = f<sub>CLK</sub> / f<sub>PWM</sub>，bit = log<sub>2</sub>N</td><td>4800 步 = <b>12.23 bit</b>；0~5 A 区间内 3200 步 = <b>11.64 bit</b></td></tr>
-        <tr><td>每步电流</td><td>ΔI = I<sub>th</sub> / N</td><td>7.50 A / 4800 = <b>1.56 mA</b>（0~5 A 内同样每步 1.56 mA）</td></tr>
+        <tr><td>满量程（D = 100%）</td><td>I = K · V<sub>PWM</sub></td><td>2.5 × 2.0 V = <b>5.00 A</b></td></tr>
+        <tr><td>满量程时 INA240 输出</td><td>V = G · R<sub>6</sub> · I</td><td>5 A × 0.4 V/A = <b>2.0 V</b>，距轨限 2.8 V 余量 0.8 V（40%）</td></tr>
+        <tr><td>调光分辨率</td><td>N = f<sub>CLK</sub> / f<sub>PWM</sub>，bit = log<sub>2</sub>N</td><td>4800 步 = <b>12.23 bit</b>（完整覆盖 0~5 A）</td></tr>
+        <tr><td>每步电流</td><td>ΔI = I<sub>FS</sub> / N</td><td>5.00 A / 4800 = <b>1.04 mA</b></td></tr>
         <tr><td>滤波时间常数</td><td>τ = R · C</td><td>3.74 kΩ × 2.2 µF = <b>8.23 ms</b></td></tr>
         <tr><td>建立时间（1%）</td><td>t<sub>1%</sub> = 6.64 τ（两级同参数 RC）</td><td><b>54.6 ms</b>，实测 57 ms</td></tr>
-        <tr><td>调光纹波</td><td>V<sub>pp</sub> = (4V<sub>PWM</sub>/π) · A² · 1.23</td><td><b>17.6 µV<sub>pp</sub></b>（RMS 约 5.6 µV，折算 44.1 µA）</td></tr>
+        <tr><td>调光纹波</td><td>V<sub>pp</sub> = (4V<sub>PWM</sub>/π) · A² · 1.23</td><td><b>11.7 µV<sub>pp</sub></b>（RMS 约 3.9 µV，折算 29.4 µA）</td></tr>
       </tbody>
     </table>
   </div>
@@ -170,7 +170,7 @@
   <h3>2.1 采样链：电流变成电压</h3>
   <div class="eq">
     <div>V<sub>INA</sub> = G · R<sub>6</sub> · I<sub>LED</sub> = 20 × 0.02 Ω × I<sub>LED</sub> = 0.4 V/A × I<sub>LED</sub></div>
-    <div class="note">G = 20（INA240A1），R6 = 0.02 Ω → 0.4 V/A。设计满量程 5 A 对应 2.0 V，INA240 供电 3.0 V、轨限约 2.8 V，<b>余量 0.8 V（40%）</b>，采样链不撞轨；硬件理论极限 2.8 V / 0.4 V/A = 7.0 A。满量程 5 A 是靠软件限占空比实现的，不是放大器极限。</div>
+    <div class="note">G = 20（INA240A1），R6 = 0.02 Ω → 0.4 V/A。PWM 幅度 2.0 V，D = 100% 时设定电压 2.0 V 正好对应满量程 5 A，此时 INA240 输出也是 2.0 V——供电 3.0 V、轨限约 2.8 V，<b>余量 0.8 V（40%）</b>，采样链不撞轨；硬件理论极限 2.8 V / 0.4 V/A = 7.0 A，占空比全程 0~100% 线性可用，不需要软件限占空比。</div>
   </div>
 
   <h3>2.2 设定链：占空比变成电压</h3>
@@ -191,18 +191,18 @@
     <table>
       <thead><tr><th>占空比 D</th><th>V<sub>DIM</sub></th><th>I<sub>LED</sub></th><th>R6 压降</th><th>备注</th></tr></thead>
       <tbody>
-        <tr><td>10%</td><td>0.30 V</td><td>0.75 A</td><td>15 mV</td><td>低亮度，注意运放失调占比变大</td></tr>
-        <tr><td>25%</td><td>0.75 V</td><td>1.88 A</td><td>37.5 mV</td><td>—</td></tr>
-        <tr><td>50%</td><td>1.50 V</td><td>3.75 A</td><td>75 mV</td><td>PWM 纹波最大点（见 4.1）</td></tr>
-        <tr><td><b>66.7%（设计上限）</b></td><td><b>2.0 V</b></td><td><b>5.00 A</b></td><td><b>100 mV</b></td><td>设计满量程，固件 D<sub>max</sub> 卡在这里</td></tr>
-        <tr><td>100%（理论）</td><td>3.0 V</td><td>7.50 A</td><td>150 mV</td><td>超出设计区间，禁止使用</td></tr>
+        <tr><td>10%</td><td>0.20 V</td><td>0.50 A</td><td>10 mV</td><td>低亮度，注意运放失调占比变大</td></tr>
+        <tr><td>25%</td><td>0.50 V</td><td>1.25 A</td><td>25 mV</td><td>—</td></tr>
+        <tr><td>50%</td><td>1.00 V</td><td>2.50 A</td><td>50 mV</td><td>PWM 纹波最大点（见 4.1）</td></tr>
+        <tr><td>75%</td><td>1.50 V</td><td>3.75 A</td><td>75 mV</td><td>—</td></tr>
+        <tr><td><b>100%</b></td><td><b>2.0 V</b></td><td><b>5.00 A</b></td><td><b>100 mV</b></td><td>满量程；INA240 输出 2.0 V，距轨限 2.8 V 余量 0.8 V</td></tr>
       </tbody>
     </table>
   </div>
 
   <div class="callout warn">
     <span class="ico">!</span>
-    <p><strong>真正的约束不是轨限，是占空比上限：</strong>INA240 供电 3.0 V，轨限约 2.8 V，对应 <b>7.0 A</b>——5 A 时输出只有 2.0 V，余量 0.8 V，采样链非常安全。代价在分辨率侧：<b>0~5 A 只占 0~66.7% 的占空比行程，等于 3200 步（11.64 bit）</b>，剩下 33% 的定时器码值是禁区（固件必须把 D<sub>max</sub> 卡在 66.7%，否则一跑上去电流会冲向 7 A 以上）。如果想拿回完整的 4800 步 / 12.23 bit，办法是 R6 改 0.030 Ω 让 3.0 V 正好对应 5 A——但那时 5 A 会顶到 2.8 V 轨限差 0.2 V，必须再把 INA240 的 VCC 改接 BAT+。两头不可兼得：现在的取法是<b>硬件裕量优先</b>。</p>
+    <p><strong>这一版参数为什么舒服：三个量互相咬合。</strong>PWM 幅度 2.0 V × 跨阻 2.5 A/V = 满量程正好 5 A；5 A 时 INA240 输出 2.0 V，距 2.8 V 轨限余量 40%；占空比 0~100% 全程线性对应 0~5 A，<b>不需要软件限 D<sub>max</sub></b>，4800 步全部有效。唯一要盯住的是 PWM 信号源的幅度：满量程 = K · V<sub>PWM</sub>，若日后把 PWM 换成 3.0 V 或 3.3 V 域的信号直出，满量程会变成 7.5 A / 8.25 A，超出 buck 的 6 A 能力——换信号源或加电平转换时必须同步复核这个乘积。</p>
   </div>
 
   <h3>2.4 运放怎么改变输出电压</h3>
@@ -212,7 +212,7 @@
     <div>⇒  V<sub>OUT</sub> = 0.6 · (1 + R<sub>8</sub>/R<sub>10</sub> + R<sub>8</sub>/R<sub>9</sub>) − V<sub>OA</sub> · (R<sub>8</sub>/R<sub>9</sub>)</div>
     <div>代入 R<sub>8</sub> = 432 kΩ，R<sub>10</sub> = 100 kΩ，R<sub>9</sub> = 866 kΩ：</div>
     <div>V<sub>OUT</sub> = 3.49 V − 0.499 · V<sub>OA</sub></div>
-    <div class="note">V<sub>OA</sub> 从 0 升到 3.0 V，V<sub>OUT</sub> 从 3.49 V 降到 1.99 V。运放输出越高，输出电压越低——这是负反馈成立的关键。若 OPA330 供电是 3.3 V，V<sub>OA</sub> 还能再升 0.3 V，V<sub>OUT</sub> 最低到 1.84 V。</div>
+    <div class="note">V<sub>OA</sub> 从 0 升到 2.0 V（3.0 V 供电只用到 2/3 行程），V<sub>OUT</sub> 从 3.49 V 降到 2.49 V。运放输出越高，输出电压越低——这是负反馈成立的关键。若 LED 串压降低于 2.5 V 导致调不下去，可把 OPA330 换到 3.3 V 供电，V<sub>OUT</sub> 最低到 1.84 V。</div>
   </div>
 
   <h3>2.5 极性检查（这一步不能省）</h3>
@@ -270,12 +270,12 @@
     <table>
       <thead><tr><th>C3 / C4</th><th>τ</th><th>建立到 1%</th><th>10 kHz 纹波</th><th>纹波 / 1 LSB</th><th>有效位数</th></tr></thead>
       <tbody>
-        <tr><td>4.7 µF</td><td>17.6 ms</td><td>117 ms</td><td>3.9 µV<sub>pp</sub></td><td>0.006</td><td>12.23</td></tr>
-        <tr><td><b>2.2 µF</b></td><td><b>8.23 ms</b></td><td><b>54.6 ms</b></td><td><b>17.6 µV<sub>pp</sub></b></td><td><b>0.028</b></td><td><b>12.23</b></td></tr>
-        <tr><td>1 µF</td><td>3.74 ms</td><td>24.8 ms</td><td>85.3 µV<sub>pp</sub></td><td>0.136</td><td>12.23</td></tr>
-        <tr><td>470 nF</td><td>1.76 ms</td><td>11.7 ms</td><td>386 µV<sub>pp</sub></td><td>0.605</td><td>12.23</td></tr>
-        <tr><td>220 nF</td><td>0.82 ms</td><td>5.5 ms</td><td>1.76 mV<sub>pp</sub></td><td>2.82</td><td>10.73</td></tr>
-        <tr><td>100 nF</td><td>0.37 ms</td><td>2.5 ms</td><td>8.52 mV<sub>pp</sub></td><td>13.6</td><td>8.46</td></tr>
+        <tr><td>4.7 µF</td><td>17.6 ms</td><td>117 ms</td><td>2.6 µV<sub>pp</sub></td><td>0.006</td><td>12.23</td></tr>
+        <tr><td><b>2.2 µF</b></td><td><b>8.23 ms</b></td><td><b>54.6 ms</b></td><td><b>11.7 µV<sub>pp</sub></b></td><td><b>0.028</b></td><td><b>12.23</b></td></tr>
+        <tr><td>1 µF</td><td>3.74 ms</td><td>24.8 ms</td><td>56.9 µV<sub>pp</sub></td><td>0.14</td><td>12.23</td></tr>
+        <tr><td>470 nF</td><td>1.76 ms</td><td>11.7 ms</td><td>257 µV<sub>pp</sub></td><td>0.62</td><td>12.23</td></tr>
+        <tr><td>220 nF</td><td>0.82 ms</td><td>5.5 ms</td><td>1.18 mV<sub>pp</sub></td><td>2.82</td><td>10.73</td></tr>
+        <tr><td>100 nF</td><td>0.37 ms</td><td>2.5 ms</td><td>5.69 mV<sub>pp</sub></td><td>13.7</td><td>8.46</td></tr>
       </tbody>
     </table>
   </div>
@@ -298,9 +298,9 @@
   </div>
   <p>因为 (2πfτ) 在 10 kHz 时等于 517，远大于 1，可以用近似式。把各次谐波按最坏情况线性叠加（Σ1/n² = 1.234）：</p>
   <div class="eq">
-    <div>V<sub>pp</sub> ≈ 2 · A<sub>1</sub> · |H|² · 1.234 = 2 × 1.91 V × (1/517)² × 1.234</div>
-    <div>V<sub>pp</sub> ≈ <b>17.6 µV</b>（D = 50%，V<sub>PWM</sub> = 3.0 V）</div>
-    <div class="note">RMS 约 5.6 µV。若按基波单独算（不加谐波）为 14.3 µV<sub>pp</sub>；若 V<sub>PWM</sub> 是 1.8 V 域，整体降到 9.6 µV<sub>pp</sub>。</div>
+    <div>V<sub>pp</sub> ≈ 2 · A<sub>1</sub> · |H|² · 1.234 = 2 × 1.27 V × (1/517)² × 1.234</div>
+    <div>V<sub>pp</sub> ≈ <b>11.7 µV</b>（D = 50%，V<sub>PWM</sub> = 2.0 V）</div>
+    <div class="note">RMS 约 3.9 µV。若按基波单独算（不加谐波）为 9.5 µV<sub>pp</sub>。</div>
   </div>
 
   <div class="callout">
@@ -310,10 +310,10 @@
 
   <h3>4.2 折算成电流：这一步才看得出好坏</h3>
   <div class="eq">
-    <div>ΔI<sub>ripple</sub> = V<sub>pp</sub> / (G·R<sub>6</sub>) = 17.6 µV / 0.4 V/A = <b>44.1 µA</b></div>
-    <div>相对设计满量程：44.1 µA / 5 A = 0.00088%，约 <b>1/35 LSB</b></div>
+    <div>ΔI<sub>ripple</sub> = V<sub>pp</sub> / (G·R<sub>6</sub>) = 11.7 µV / 0.4 V/A = <b>29.4 µA</b></div>
+    <div>相对满量程：29.4 µA / 5 A = 0.00059%，约 <b>1/35 LSB</b></div>
   </div>
-  <p>结论：按这颗 2.2 µF，调光设定纹波远小于一步电流（1.56 mA），<b>分辨率不会被纹波吃掉</b>。这也是 11.64 bit（0~5 A 区间）这个标称值能站得住的前提。</p>
+  <p>结论：按这颗 2.2 µF，调光设定纹波远小于一步电流（1.04 mA），<b>分辨率不会被纹波吃掉</b>。这也是 12.23 bit 这个标称值能站得住的前提。</p>
 
   <h3>4.3 buck 开关纹波：另一个量级</h3>
   <p>功率级是 2.4 MHz 同步 buck，电感 0.47 µH，输出 3.19 V / 输入 4.2 V：</p>
@@ -328,7 +328,7 @@
     <table>
       <thead><tr><th>纹波源</th><th>频率</th><th>幅度</th><th>折算 LED 电流</th><th>影响</th></tr></thead>
       <tbody>
-        <tr><td>PWM 滤波残余</td><td>10 kHz</td><td>17.6 µV<sub>pp</sub></td><td>44.1 µA</td><td>平均电流抖动，远小于 1 LSB</td></tr>
+        <tr><td>PWM 滤波残余</td><td>10 kHz</td><td>11.7 µV<sub>pp</sub></td><td>29.4 µA</td><td>平均电流抖动，远小于 1 LSB</td></tr>
         <tr><td>buck 开关纹波</td><td>2.4 MHz</td><td>0.68 A（电感）</td><td>数 mA ~ 十几 mA</td><td>瞬时电流、光输出纹波、摄像头频闪</td></tr>
         <tr><td>运放失调</td><td>DC</td><td>25 µV（OPA330 max）</td><td>62.5 µA</td><td>固定偏移，可校准</td></tr>
       </tbody>
@@ -348,7 +348,7 @@
       <thead><tr><th>概念</th><th>定义</th><th>由什么决定</th><th>本图数值</th></tr></thead>
       <tbody>
         <tr><td>分辨率</td><td>能区分的最小占空比变化</td><td>定时器计数 N = f<sub>CLK</sub>/f<sub>PWM</sub></td><td>4800 步 = 12.23 bit</td></tr>
-        <tr><td>步进电流 ΔI</td><td>每走 1 个计数，LED 电流变化多少</td><td>I<sub>th</sub>/N</td><td>1.56 mA</td></tr>
+        <tr><td>步进电流 ΔI</td><td>每走 1 个计数，LED 电流变化多少</td><td>I<sub>FS</sub>/N</td><td>1.04 mA</td></tr>
         <tr><td>有效精度</td><td>分辨率与纹波中较差的那个</td><td>ΔI 与 ΔI<sub>ripple</sub> 合成</td><td>见下表</td></tr>
       </tbody>
     </table>
@@ -358,7 +358,7 @@
   <p>定时器时钟固定时，PWM 频率与 ARR 是倒数关系。频率越高，一个周期内的计数越少，分辨率越低：</p>
   <div class="eq">
     <div>N = f<sub>CLK</sub> / (f<sub>PWM</sub> · (PSC + 1))　（本图取 PSC = 0，f<sub>CLK</sub> = 48 MHz）</div>
-    <div>bit = log<sub>2</sub> N　　ΔD = 1/N　　ΔI = I<sub>th</sub>/N（I<sub>th</sub> = K·V<sub>PWM</sub> 为 D = 100% 理论满量程）</div>
+    <div>bit = log<sub>2</sub> N　　ΔD = 1/N　　ΔI = I<sub>FS</sub>/N（I<sub>FS</sub> = K·V<sub>PWM</sub> 为 D = 100% 满量程）</div>
     <div class="note">10 kHz → N = 4800 → 2<sup>12.23</sup> ≈ 4800，这就是标注「12.23 bit」的来历。</div>
   </div>
 
@@ -371,7 +371,7 @@
   </div>
 
   <h3>5.3 六个频率档位的实算结果</h3>
-  <p>前提：f<sub>CLK</sub> = 48 MHz、V<sub>PWM</sub> = 3.0 V、R6 = 0.02 Ω（0.4 V/A，理论满量程 7.5 A，设计工作区 0~5 A 即 D ≤ 66.7%）、R = 3.74 kΩ、C = 2.2 µF（即本图参数不变，只改 PWM 频率）。</p>
+  <p>前提：f<sub>CLK</sub> = 48 MHz、V<sub>PWM</sub> = 2.0 V、R6 = 0.02 Ω（0.4 V/A，满量程 5 A）、R = 3.74 kΩ、C = 2.2 µF（即本图参数不变，只改 PWM 频率）。</p>
 
   <div class="table-wrap">
     <table class="t-wide">
@@ -384,27 +384,27 @@
       <tbody>
         <tr>
           <td><b>1 kHz</b></td><td>48000</td><td>15.55 bit</td><td>0.0021%</td>
-          <td>0.16 mA</td><td>1.76 mV<sub>pp</sub></td><td>4.41 mA</td><td><b>4.41 mA</b></td><td>10.73</td>
+          <td>0.10 mA</td><td>1.17 mV<sub>pp</sub></td><td>2.94 mA</td><td><b>2.94 mA</b></td><td>10.73</td>
         </tr>
         <tr>
           <td><b>2 kHz</b></td><td>24000</td><td>14.55 bit</td><td>0.0042%</td>
-          <td>0.31 mA</td><td>441 µV<sub>pp</sub></td><td>1.10 mA</td><td><b>1.15 mA</b></td><td>12.73</td>
+          <td>0.21 mA</td><td>294 µV<sub>pp</sub></td><td>0.73 mA</td><td><b>0.76 mA</b></td><td>12.73</td>
         </tr>
         <tr style="background:var(--accent-soft)">
           <td><b>5 kHz</b></td><td>9600</td><td>13.23 bit</td><td>0.0104%</td>
-          <td>0.78 mA</td><td>70.5 µV<sub>pp</sub></td><td>0.18 mA</td><td><b>0.80 mA</b></td><td>13.23</td>
+          <td>0.52 mA</td><td>47.0 µV<sub>pp</sub></td><td>0.12 mA</td><td><b>0.53 mA</b></td><td>13.23</td>
         </tr>
         <tr>
           <td><b>10 kHz</b>（本图）</td><td>4800</td><td>12.23 bit</td><td>0.0208%</td>
-          <td>1.56 mA</td><td>17.6 µV<sub>pp</sub></td><td>44.1 µA</td><td><b>1.56 mA</b></td><td>12.23</td>
+          <td>1.04 mA</td><td>11.7 µV<sub>pp</sub></td><td>29.4 µA</td><td><b>1.04 mA</b></td><td>12.23</td>
         </tr>
         <tr>
           <td><b>20 kHz</b></td><td>2400</td><td>11.23 bit</td><td>0.0417%</td>
-          <td>3.13 mA</td><td>4.4 µV<sub>pp</sub></td><td>11 µA</td><td><b>3.13 mA</b></td><td>11.23</td>
+          <td>2.08 mA</td><td>2.9 µV<sub>pp</sub></td><td>7.3 µA</td><td><b>2.08 mA</b></td><td>11.23</td>
         </tr>
         <tr>
           <td><b>50 kHz</b></td><td>960</td><td>9.91 bit</td><td>0.104%</td>
-          <td>7.81 mA</td><td>0.71 µV<sub>pp</sub></td><td>1.8 µA</td><td><b>7.81 mA</b></td><td>9.91</td>
+          <td>5.21 mA</td><td>0.47 µV<sub>pp</sub></td><td>1.2 µA</td><td><b>5.21 mA</b></td><td>9.91</td>
         </tr>
       </tbody>
     </table>
@@ -412,21 +412,21 @@
 
   <div class="callout">
     <span class="ico">→</span>
-    <p><strong>表里最反直觉的一行是 1 kHz。</strong>分辨率明明有 15.55 bit（听起来比 12.23 好），但纹波涨到 1.76 mV<sub>pp</sub>，折算成电流 4.41 mA，是 10 kHz 的 100 倍。真实精度只有 <b>10.73 bit</b>，反而比 10 kHz 差。所以「降低频率换分辨率」这条路，在两级 RC 固定时是走不通的。</p>
+    <p><strong>表里最反直觉的一行是 1 kHz。</strong>分辨率明明有 15.55 bit（听起来比 12.23 好），但纹波涨到 1.17 mV<sub>pp</sub>，折算成电流 2.94 mA，是 10 kHz 的 100 倍。真实精度只有 <b>10.73 bit</b>，反而比 10 kHz 差。所以「降低频率换分辨率」这条路，在两级 RC 固定时是走不通的。</p>
   </div>
 
   <h3>5.4 最优点在哪</h3>
-  <p>把两条曲线画在同一张图上，交点大约在 5 kHz：此处分辨率 13.23 bit，纹波压到 0.18 mA（远小于一步 0.78 mA），综合精度 0.80 mA 是六档里最好的。10 kHz 用 1.56 mA 换来了更低纹波和两倍于听觉上限的刷新率，是更常见的选择。</p>
+  <p>把两条曲线画在同一张图上，交点大约在 5 kHz：此处分辨率 13.23 bit，纹波压到 0.12 mA（远小于一步 0.52 mA），综合精度 0.53 mA 是六档里最好的。10 kHz 用 1.04 mA 换来了更低纹波和两倍于听觉上限的刷新率，是更常见的选择。</p>
   <ul>
-    <li><b>要精度优先</b>：5 kHz，13.23 bit / 0.80 mA，前提是 5 kHz 不会与摄像头帧率或电源环路打架。</li>
-    <li><b>要响应和低纹波</b>：10~20 kHz，12.23~11.23 bit，1.6~3.1 mA。</li>
+    <li><b>要精度优先</b>：5 kHz，13.23 bit / 0.53 mA，前提是 5 kHz 不会与摄像头帧率或电源环路打架。</li>
+    <li><b>要响应和低纹波</b>：10~20 kHz，12.23~11.23 bit，1.0~2.1 mA。</li>
     <li><b>要绝对避免可见闪烁</b>：>20 kHz，但要接受 11 bit 以下，且需要检查定时器时钟是否够高（N 太小会让 ΔI 上升很快）。</li>
   </ul>
 
   <h3>5.5 选频率的四步</h3>
   <ul class="flow">
-    <li><span class="n">01</span><div><b>定精度需求</b>先把可接受的最小电流步进写下来（例如 2 mA），用理论满量程 I<sub>th</sub>（本例 7.5 A）除以它得到需要的 N。</div></li>
-    <li><span class="n">02</span><div><b>反推频率上限</b>f<sub>PWM</sub> ≤ f<sub>CLK</sub>/N。本例每步 1.56 mA（K = 2.5 A/V、f<sub>CLK</sub> = 48 MHz）：要 2 mA 步进，N ≥ 3750，频率不超过 12.8 kHz；要 1 mA 步进，N ≥ 7500，上限 6.4 kHz。</div></li>
+    <li><span class="n">01</span><div><b>定精度需求</b>先把可接受的最小电流步进写下来（例如 2 mA），用满量程 I<sub>FS</sub>（本例 5 A）除以它得到需要的 N。</div></li>
+    <li><span class="n">02</span><div><b>反推频率上限</b>f<sub>PWM</sub> ≤ f<sub>CLK</sub>/N。本例每步 1.04 mA（K = 2.5 A/V、f<sub>CLK</sub> = 48 MHz）：要 2 mA 步进，N ≥ 2500，频率不超过 19.2 kHz；要 1 mA 步进，N ≥ 5000，上限 9.6 kHz。</div></li>
     <li><span class="n">03</span><div><b>校核纹波</b>用 4.1 的公式算这个频率下的纹波，确认折算电流小于 1 LSB；不满足就加大 C3/C4。</div></li>
     <li><span class="n">04</span><div><b>校核建立时间</b>6.64τ 必须小于系统的调光刷新周期，否则上一档还没稳就切下一档，画面会"糊"。</div></li>
   </ul>
@@ -445,7 +445,7 @@
   <div class="calc" data-calc="ccd">
     <p class="grp">电路参数</p>
     <div class="fields">
-      <div class="field"><label for="cc-vpwm">PWM 幅度 (V)</label><input id="cc-vpwm" type="number" step="any" value="3.0"></div>
+      <div class="field"><label for="cc-vpwm">PWM 幅度 (V)</label><input id="cc-vpwm" type="number" step="any" value="2.0"></div>
       <div class="field"><label for="cc-fclk">定时器时钟 (MHz)</label><input id="cc-fclk" type="number" step="any" value="48"></div>
       <div class="field"><label for="cc-fpwm">PWM 频率 (kHz)</label><input id="cc-fpwm" type="number" step="any" value="10"></div>
       <div class="field"><label for="cc-r6">采样电阻 R6 (mΩ)</label><input id="cc-r6" type="number" step="any" value="20"></div>
@@ -521,8 +521,8 @@
         </tr>
         <tr>
           <td>运放输出范围</td>
-          <td>V<sub>OA</sub> 需 0~3.0 V，OPA330 输出轨到轨</td>
-          <td>OK，但接近 0 V 时压摆变慢</td>
+          <td>V<sub>OA</sub> 需 0~2.0 V，OPA330 输出轨到轨</td>
+          <td>OK，行程只用到 3.0 V 供电的 2/3，接近 0 V 时压摆变慢</td>
         </tr>
         <tr>
           <td>buck 输出能力</td>
@@ -535,12 +535,12 @@
 
   <div class="callout">
     <span class="ico">→</span>
-    <p><strong>按真实工况复盘，之前列的三个冲突全部解除</strong>：满量程 5 A 是软件限 D<sub>max</sub> = 66.7% 实现的，INA240 只出到 2.0 V（轨限余量 40%），R6 只有 0.5 W（50% 降额），buck 跑 83%——硬件上没有超规格的地方。<b>唯一被消耗的资源是分辨率</b>：0~5 A 只用了 4800 步里的 3200 步，等效 11.64 bit 而不是 12.23 bit。</p>
+    <p><strong>按真实工况复盘，之前列的冲突全部解除，而且这次没有取舍</strong>：V<sub>PWM</sub> = 2.0 V 让满量程正好是 5 A，INA240 满量程输出 2.0 V（轨限余量 40%），R6 只有 0.5 W（50% 降额），buck 跑 83%——硬件上没有超规格的地方，而且 <b>4800 步全部落在 0~5 A 区间，12.23 bit 完整可用，不需要软件限占空比</b>。</p>
   </div>
 
-  <div class="callout warn">
-    <span class="ico">!</span>
-    <p><strong>固件必须把 D<sub>max</sub> 卡在 66.7%（V<sub>DIM</sub> = 2.0 V）。</strong>这不是性能取舍，是安全边界：超过之后设定电压高于 INA240 能达到的最大输出，运放认为电流偏小，会把 buck 一路推到 7 A 以上，LED 和 R6 都进入超规格区。同理，上位机下发的亮度值也要在 0~66.7% 区间内做映射，不要把 100% 亮度直写成 D = 100%。</p>
+  <div class="callout">
+    <span class="ico">→</span>
+    <p><strong>唯一要盯住的是 PWM 信号源的幅度。</strong>满量程 = K · V<sub>PWM</sub>，现在 2.0 V 对应 5 A；若日后 PWM 换成 3.0 V 或 3.3 V 域直出，满量程会变成 7.5 A / 8.25 A，超出 TPS6286A06 的 6 A 能力，100% 时 R6 功耗和 INA240 轨限也都要重核。换 MCU、改电平或动信号链时，先复核这个乘积。</p>
   </div>
 </section>
 
@@ -572,7 +572,7 @@
   <p>直接斩波效率高、分辨率只受定时器限制，但有两个问题：一是开关沿的 di/dt 会带来 EMI 和振铃，二是低亮度时窄脉冲会让 LED 的色坐标偏移（不同电流下光谱不同）。模拟调光让电流连续，光谱稳定、无频闪，代价就是这里讨论的建立时间与纹波。</p>
 
   <h3>9.2 建立时间实测比 54.6 ms 大很多，差在哪？</h3>
-  <p>按可能性排序：① C3/C4 是 X5R/X7R 大容差（±20%），实际容量偏大；② 运放从饱和恢复时的压摆率限制（OPA330 约 0.16 V/µs，3 V 摆幅要 19 ms）；③ buck 在轻载进入 PFM，输出阻抗变高。先测运放输出波形，看是不是被压摆率拖住。</p>
+  <p>按可能性排序：① C3/C4 是 X5R/X7R 大容差（±20%），实际容量偏大；② 运放从饱和恢复时的压摆率限制（OPA330 约 0.16 V/µs，2 V 摆幅约 13 µs，一般不是主因）；③ buck 在轻载进入 PFM，输出阻抗变高。先测运放输出波形，看是不是被压摆率拖住。</p>
 
   <h3>9.3 为什么纹波测出来比算的大？</h3>
   <p>先看是不是在 D = 50% 测的（最坏点）。其次检查探头：普通鳄鱼夹地线会引入几十 mV 的开关噪声，把 µV 级信号完全淹没。第三，PWM 源的上升沿如果不陡（比如经过光耦或长线），高频分量减少，纹波反而会小；反之如果 MCU 直出，边沿很陡，高次谐波会多算一些。</p>
