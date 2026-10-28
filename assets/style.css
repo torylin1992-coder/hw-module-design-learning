@@ -714,6 +714,31 @@ details.faq .body p:last-child, details.faq .body ul:last-child { margin-bottom:
 .chap th, .chap td { padding: 9px 12px; }
 .chap sub { font-size: .72em; }
 
+/* ---- 正文插图 ---- */
+.fig { margin: 18px 0 20px; }
+.fig img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: #0b0f14;
+}
+.fig figcaption { margin-top: 8px; font-size: .82rem; color: var(--muted); line-height: 1.6; }
+.fig a { display: block; }
+.fig a:hover img { border-color: var(--accent); }
+.chap .table-wrap table.t-wide { min-width: 820px; }
+@media (max-width: 760px) { .br-pc { display: none; } }
+@media (max-width: 620px) {
+  .chap .table-wrap table { min-width: 520px; }
+  .chap .table-wrap table.t-wide { min-width: 700px; }
+  .chap .table-wrap th:first-child, .chap .table-wrap td:first-child { white-space: nowrap; }
+  .calc .fields, .calc .out { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .calc { padding: 18px 16px; }
+  .out b { font-size: .95rem; }
+  .out div { padding: 9px 11px; }
+}
+
 .eq {
   background: var(--surface-2);
   border-left: 3px solid var(--accent);
