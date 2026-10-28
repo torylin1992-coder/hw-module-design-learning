@@ -102,10 +102,10 @@
     <table>
       <thead><tr><th>指标</th><th>算式</th><th>按本图参数</th></tr></thead>
       <tbody>
-        <tr><td>电流设定跨阻</td><td>K = 1 / (G · R<sub>6</sub>)</td><td>1 / (20 × 0.02 Ω) = <b>2.5 A/V</b></td></tr>
-        <tr><td>满量程电流</td><td>I<sub>FS</sub> = K · V<sub>PWM</sub></td><td>2.5 × 3.3 V = <b>8.25 A</b></td></tr>
+        <tr><td>电流设定跨阻</td><td>K = 1 / (G · R<sub>6</sub>)</td><td>1 / (20 × 0.033 Ω) = <b>1.515 A/V</b></td></tr>
+        <tr><td>满量程电流</td><td>I<sub>FS</sub> = K · V<sub>PWM</sub></td><td>1.515 × 3.3 V = <b>5.00 A</b></td></tr>
         <tr><td>调光分辨率</td><td>N = f<sub>CLK</sub> / f<sub>PWM</sub>，bit = log<sub>2</sub>N</td><td>48 MHz / 10 kHz = 4800 步 = <b>12.23 bit</b></td></tr>
-        <tr><td>每步电流</td><td>ΔI = I<sub>FS</sub> / N</td><td>8.25 A / 4800 = <b>1.72 mA</b></td></tr>
+        <tr><td>每步电流</td><td>ΔI = I<sub>FS</sub> / N</td><td>5.00 A / 4800 = <b>1.04 mA</b></td></tr>
         <tr><td>滤波时间常数</td><td>τ = R · C</td><td>3.74 kΩ × 2.2 µF = <b>8.23 ms</b></td></tr>
         <tr><td>建立时间（1%）</td><td>t<sub>1%</sub> = 6.64 τ（两级同参数 RC）</td><td><b>54.6 ms</b>，实测 57 ms</td></tr>
         <tr><td>调光纹波</td><td>V<sub>pp</sub> = (4V<sub>PWM</sub>/π) · A² · 1.23</td><td><b>19.4 µV<sub>pp</sub></b>（RMS 约 6.2 µV）</td></tr>
@@ -138,7 +138,7 @@
       <thead><tr><th>环节</th><th>器件</th><th>作用</th><th>决定什么指标</th></tr></thead>
       <tbody>
         <tr><td>① 功率级</td><td>U4 TPS6286A06、L1 0.47 µH、C9/C10 22 µF×2</td><td>把 BAT+ 降压到 LED 串所需电压，2.4 MHz 同步整流</td><td>开关纹波、效率</td></tr>
-        <tr><td>② 电流采样</td><td>R6 0.02 Ω 1% 1206 1W、U6 INA240A1</td><td>把 LED 电流转成电压，增益 20 V/V</td><td>跨阻 2.5 A/V、增益误差</td></tr>
+        <tr><td>② 电流采样</td><td>R6 0.033 Ω 1% 2512、U6 INA240A1</td><td>把 LED 电流转成电压，增益 20 V/V</td><td>跨阻 1.515 A/V、增益误差</td></tr>
         <tr><td>③ 采样滤波</td><td>R3 10 kΩ、C12 1.5 nF</td><td>抑制 2.4 MHz 开关噪声进入运放</td><td>采样噪声、环路相位</td></tr>
         <tr><td>④ 误差放大</td><td>U3 OPA330（零漂移）</td><td>比较设定电压与采样电压，输出误差量</td><td>直流精度、响应速度</td></tr>
         <tr><td>⑤ 环路注入</td><td>R9 866 kΩ、R8 432 kΩ、R10 100 kΩ</td><td>把运放输出注入 FB 分压中点，改变 V<sub>OUT</sub></td><td>调节范围、环路增益</td></tr>
@@ -158,7 +158,7 @@
 
   <h3>1.2 为什么采样电阻放在 LED 回路里</h3>
   <p>R6 串在 LED 电流的实际路径上，INA240 测的是它的压降。这样电流环直接闭合在<b>负载电流</b>上，而不是电感电流或输出电压上，LED 的 V<sub>f</sub> 漂移、线束电阻、温度变化都被环路吃掉，只剩采样电阻的容差和放大器误差留在精度里。</p>
-  <p>代价是 R6 上有持续功耗：8.25 A 时 P = I²R = 8.25² × 0.02 = <b>1.36 W</b>，而选的 1206 封装额定 1 W。这一点在第 7 章误差与降额里会再提，属于必须复核的项。</p>
+  <p>代价是 R6 上有持续功耗：5 A 时 P = I²R = 5² × 0.033 = <b>0.83 W</b>。2512 封装额定 1 W，用到 82%，虽然不超额定但余量偏紧，第 7 章会给出两颗并联的改法。</p>
 </section>
 
 <section class="chap" id="ch2">
@@ -168,8 +168,8 @@
 
   <h3>2.1 采样链：电流变成电压</h3>
   <div class="eq">
-    <div>V<sub>INA</sub> = G · R<sub>6</sub> · I<sub>LED</sub> = 20 × 0.02 Ω × I<sub>LED</sub> = 0.4 V/A × I<sub>LED</sub></div>
-    <div class="note">G = 20（INA240A1），R6 = 0.02 Ω → 0.4 V/A，即 8.25 A 对应 3.3 V。</div>
+    <div>V<sub>INA</sub> = G · R<sub>6</sub> · I<sub>LED</sub> = 20 × 0.033 Ω × I<sub>LED</sub> = 0.66 V/A × I<sub>LED</sub></div>
+    <div class="note">G = 20（INA240A1），R6 = 0.033 Ω → 0.66 V/A，即 5 A 对应 3.3 V。<b>这个 0.66 V/A 是由满量程 5 A 反推出来的</b>：G·R<sub>6</sub> = V<sub>FS</sub>/I<sub>FS</sub> = 3.3 V / 5 A。改满量程就改 R6，增益 G 由芯片固定。</div>
   </div>
 
   <h3>2.2 设定链：占空比变成电压</h3>
@@ -182,7 +182,7 @@
   <p>运放工作在闭环，反相端与同相端电位相等（V− = V+），而两端各接一条链的直流输出，于是：</p>
   <div class="eq">
     <div>D · V<sub>PWM</sub> = G · R<sub>6</sub> · I<sub>LED</sub></div>
-    <div>⇒  I<sub>LED</sub> = D · V<sub>PWM</sub> / (G · R<sub>6</sub>) = K · D · V<sub>PWM</sub>，K = 2.5 A/V</div>
+    <div>⇒  I<sub>LED</sub> = D · V<sub>PWM</sub> / (G · R<sub>6</sub>) = K · D · V<sub>PWM</sub>，K = 1.515 A/V</div>
   </div>
   <p>这就是全部：<b>电流与占空比严格成正比</b>，比例系数只由 V<sub>PWM</sub>、G、R6 三个量决定。调光线性度好不好，就看这三个量稳不稳。</p>
 
@@ -190,18 +190,18 @@
     <table>
       <thead><tr><th>占空比 D</th><th>V<sub>DIM</sub></th><th>I<sub>LED</sub></th><th>R6 压降</th><th>备注</th></tr></thead>
       <tbody>
-        <tr><td>10%</td><td>0.33 V</td><td>0.83 A</td><td>16.5 mV</td><td>低亮度，注意运放失调占比变大</td></tr>
-        <tr><td>25%</td><td>0.825 V</td><td>2.06 A</td><td>41 mV</td><td>—</td></tr>
-        <tr><td>50%</td><td>1.65 V</td><td>4.13 A</td><td>83 mV</td><td>PWM 纹波最大点（见 4.1）</td></tr>
-        <tr><td>75%</td><td>2.475 V</td><td>6.19 A</td><td>124 mV</td><td>—</td></tr>
-        <tr><td>100%</td><td>3.3 V</td><td>8.25 A</td><td>165 mV</td><td>此时 INA240 输出接近 3.3 V 供电轨</td></tr>
+        <tr><td>10%</td><td>0.33 V</td><td>0.50 A</td><td>16.5 mV</td><td>低亮度，注意运放失调占比变大</td></tr>
+        <tr><td>25%</td><td>0.825 V</td><td>1.25 A</td><td>41 mV</td><td>—</td></tr>
+        <tr><td>50%</td><td>1.65 V</td><td>2.50 A</td><td>83 mV</td><td>PWM 纹波最大点（见 4.1）</td></tr>
+        <tr><td>75%</td><td>2.475 V</td><td>3.75 A</td><td>124 mV</td><td>—</td></tr>
+        <tr><td>100%</td><td>3.3 V</td><td>5.00 A</td><td>165 mV</td><td>此时 INA240 输出已超出 3.3 V 供电轨（见下）</td></tr>
       </tbody>
     </table>
   </div>
 
   <div class="callout warn">
     <span class="ico">!</span>
-    <p><strong>满量程边界：</strong>INA240A1 在 3.3 V 供电下输出摆幅上限约 V<sub>S</sub> − 0.2 V = 3.1 V，对应 7.75 A。D = 100% 时要求 3.3 V，已经顶到轨。实际可用满量程应按 <b>7.7 A</b> 取，或在软件里把最大占空比限制在 93%。</p>
+    <p><strong>满量程与运放轨限差 6%：</strong>I<sub>FS</sub> = 5 A 对应 3.3 V，但 INA240A1 在 3.3 V 供电下输出摆幅上限约 V<sub>S</sub> − 0.2 V = 3.1 V，只能到 <b>4.70 A（94% 满量程）</b>。三条改法：① 软件把最大占空比限在 94%，把 5 A 当作"标称满量程"、4.7 A 当作"可用上限"；② R6 改 0.030 Ω，5 A → 3.0 V，留 0.1 V 余量（代价是跨阻变 1.667 A/V，3.3 V 满占空比对应 5.5 A，需要重新标定）；③ INA240 改 5 V 供电（若板上有 5 V 轨），轨限升到 4.8 V，5 A 完全够。选①最省事，本文后续数字都按 I<sub>FS</sub> = 5 A 计算。</p>
   </div>
 
   <h3>2.4 运放怎么改变输出电压</h3>
@@ -309,10 +309,10 @@
 
   <h3>4.2 折算成电流：这一步才看得出好坏</h3>
   <div class="eq">
-    <div>ΔI<sub>ripple</sub> = V<sub>pp</sub> / (G·R<sub>6</sub>) = 19.4 µV / 0.4 V/A = <b>48.5 µA</b></div>
-    <div>相对满量程：48.5 µA / 8.25 A = 0.00059%，约 <b>1/35 LSB</b></div>
+    <div>ΔI<sub>ripple</sub> = V<sub>pp</sub> / (G·R<sub>6</sub>) = 19.4 µV / 0.66 V/A = <b>29.4 µA</b></div>
+    <div>相对满量程：29.4 µA / 5 A = 0.00059%，约 <b>1/35 LSB</b></div>
   </div>
-  <p>结论：按这颗 2.2 µF，调光设定纹波远小于一步电流（1.72 mA），<b>分辨率不会被纹波吃掉</b>。这也是 12.23 bit 这个标称值能站得住的前提。</p>
+  <p>结论：按这颗 2.2 µF，调光设定纹波远小于一步电流（1.04 mA），<b>分辨率不会被纹波吃掉</b>。这也是 12.23 bit 这个标称值能站得住的前提。</p>
 
   <h3>4.3 buck 开关纹波：另一个量级</h3>
   <p>功率级是 2.4 MHz 同步 buck，电感 0.47 µH，输出 3.19 V / 输入 4.2 V：</p>
@@ -321,15 +321,15 @@
     <div>ΔI<sub>L</sub> = V<sub>OUT</sub>(1 − D)/(L·f<sub>SW</sub>) = 3.19 × 0.24/(0.47 µH × 2.4 MHz) = <b>0.68 A</b></div>
     <div>ΔV<sub>OUT</sub> ≈ ΔI<sub>L</sub>/(8·C·f<sub>SW</sub>) = 0.68/(8 × 44 µF × 2.4 MHz) = <b>0.8 mV</b></div>
   </div>
-  <p>这 0.68 A 的三角波纹波会直接出现在 LED 电流上（电流环带宽只有几十 Hz，压不住 2.4 MHz）。它折算到采样端是 0.68 × 0.02 = 13.6 mV，被 INA240 放大后 272 mV，再经 R3/C12（fc = 10.6 kHz）衰减约 226 倍，到运放输入端约 1.2 mV——所以 R3/C12 是必须的，没有它运放会一直"看见"开关噪声。</p>
+  <p>这 0.68 A 的三角波纹波会直接出现在 LED 电流上（电流环带宽只有几十 Hz，压不住 2.4 MHz）。它折算到采样端是 0.68 × 0.033 = 22.4 mV，被 INA240 放大后 449 mV，再经 R3/C12（fc = 10.6 kHz）衰减约 226 倍，到运放输入端约 2.0 mV——所以 R3/C12 是必须的，没有它运放会一直"看见"开关噪声。<b>注意采样电阻从 0.02 Ω 改到 0.033 Ω 后，这项噪声同比放大了 65%</b>，采样滤波的时间常数值得重新核一遍。</p>
 
   <div class="table-wrap">
     <table>
       <thead><tr><th>纹波源</th><th>频率</th><th>幅度</th><th>折算 LED 电流</th><th>影响</th></tr></thead>
       <tbody>
-        <tr><td>PWM 滤波残余</td><td>10 kHz</td><td>19.4 µV<sub>pp</sub></td><td>48.5 µA</td><td>平均电流抖动，远小于 1 LSB</td></tr>
+        <tr><td>PWM 滤波残余</td><td>10 kHz</td><td>19.4 µV<sub>pp</sub></td><td>29.4 µA</td><td>平均电流抖动，远小于 1 LSB</td></tr>
         <tr><td>buck 开关纹波</td><td>2.4 MHz</td><td>0.68 A（电感）</td><td>数 mA ~ 十几 mA</td><td>瞬时电流、光输出纹波、摄像头频闪</td></tr>
-        <tr><td>运放失调</td><td>DC</td><td>25 µV（OPA330 max）</td><td>62.5 µA</td><td>固定偏移，可校准</td></tr>
+        <tr><td>运放失调</td><td>DC</td><td>25 µV（OPA330 max）</td><td>37.9 µA</td><td>固定偏移，可校准</td></tr>
       </tbody>
     </table>
   </div>
@@ -347,7 +347,7 @@
       <thead><tr><th>概念</th><th>定义</th><th>由什么决定</th><th>本图数值</th></tr></thead>
       <tbody>
         <tr><td>分辨率</td><td>能区分的最小占空比变化</td><td>定时器计数 N = f<sub>CLK</sub>/f<sub>PWM</sub></td><td>4800 步 = 12.23 bit</td></tr>
-        <tr><td>步进电流 ΔI</td><td>每走 1 个计数，LED 电流变化多少</td><td>I<sub>FS</sub>/N</td><td>1.72 mA</td></tr>
+        <tr><td>步进电流 ΔI</td><td>每走 1 个计数，LED 电流变化多少</td><td>I<sub>FS</sub>/N</td><td>1.04 mA</td></tr>
         <tr><td>有效精度</td><td>分辨率与纹波中较差的那个</td><td>ΔI 与 ΔI<sub>ripple</sub> 合成</td><td>见下表</td></tr>
       </tbody>
     </table>
@@ -370,7 +370,7 @@
   </div>
 
   <h3>5.3 六个频率档位的实算结果</h3>
-  <p>前提：f<sub>CLK</sub> = 48 MHz、V<sub>PWM</sub> = 3.3 V、R6 = 0.02 Ω、G = 20、R = 3.74 kΩ、C = 2.2 µF（即本图参数不变，只改 PWM 频率）。</p>
+  <p>前提：f<sub>CLK</sub> = 48 MHz、V<sub>PWM</sub> = 3.3 V、I<sub>FS</sub> = 5 A（R6 = 0.033 Ω、G = 20）、R = 3.74 kΩ、C = 2.2 µF（即本图参数不变，只改 PWM 频率）。</p>
 
   <div class="table-wrap">
     <table class="t-wide">
@@ -383,27 +383,27 @@
       <tbody>
         <tr>
           <td><b>1 kHz</b></td><td>48000</td><td>15.55 bit</td><td>0.0021%</td>
-          <td>0.17 mA</td><td>1.94 mV<sub>pp</sub></td><td>4.85 mA</td><td><b>4.85 mA</b></td><td>10.73</td>
+          <td>0.10 mA</td><td>1.94 mV<sub>pp</sub></td><td>2.94 mA</td><td><b>2.94 mA</b></td><td>10.73</td>
         </tr>
         <tr>
           <td><b>2 kHz</b></td><td>24000</td><td>14.55 bit</td><td>0.0042%</td>
-          <td>0.34 mA</td><td>484 µV<sub>pp</sub></td><td>1.21 mA</td><td><b>1.21 mA</b></td><td>12.74</td>
+          <td>0.21 mA</td><td>484 µV<sub>pp</sub></td><td>0.74 mA</td><td><b>0.76 mA</b></td><td>12.73</td>
         </tr>
         <tr style="background:var(--accent-soft)">
           <td><b>5 kHz</b></td><td>9600</td><td>13.23 bit</td><td>0.0104%</td>
-          <td>0.86 mA</td><td>77.5 µV<sub>pp</sub></td><td>0.19 mA</td><td><b>0.88 mA</b></td><td>13.23</td>
+          <td>0.52 mA</td><td>77.5 µV<sub>pp</sub></td><td>0.12 mA</td><td><b>0.53 mA</b></td><td>13.23</td>
         </tr>
         <tr>
           <td><b>10 kHz</b>（本图）</td><td>4800</td><td>12.23 bit</td><td>0.0208%</td>
-          <td>1.72 mA</td><td>19.4 µV<sub>pp</sub></td><td>48.5 µA</td><td><b>1.72 mA</b></td><td>12.23</td>
+          <td>1.04 mA</td><td>19.4 µV<sub>pp</sub></td><td>29.4 µA</td><td><b>1.04 mA</b></td><td>12.23</td>
         </tr>
         <tr>
           <td><b>20 kHz</b></td><td>2400</td><td>11.23 bit</td><td>0.0417%</td>
-          <td>3.44 mA</td><td>4.84 µV<sub>pp</sub></td><td>12.1 µA</td><td><b>3.44 mA</b></td><td>11.23</td>
+          <td>2.08 mA</td><td>4.84 µV<sub>pp</sub></td><td>7.3 µA</td><td><b>2.08 mA</b></td><td>11.23</td>
         </tr>
         <tr>
           <td><b>50 kHz</b></td><td>960</td><td>9.91 bit</td><td>0.104%</td>
-          <td>8.59 mA</td><td>0.78 µV<sub>pp</sub></td><td>1.95 µA</td><td><b>8.59 mA</b></td><td>9.91</td>
+          <td>5.21 mA</td><td>0.78 µV<sub>pp</sub></td><td>1.2 µA</td><td><b>5.21 mA</b></td><td>9.91</td>
         </tr>
       </tbody>
     </table>
@@ -411,21 +411,21 @@
 
   <div class="callout">
     <span class="ico">→</span>
-    <p><strong>表里最反直觉的一行是 1 kHz。</strong>分辨率明明有 15.55 bit（听起来比 12.23 好），但纹波涨到 1.94 mV<sub>pp</sub>，折算成电流 4.85 mA，是 10 kHz 的 100 倍。真实精度只有 <b>10.73 bit</b>，反而比 10 kHz 差。所以「降低频率换分辨率」这条路，在两级 RC 固定时是走不通的。</p>
+    <p><strong>表里最反直觉的一行是 1 kHz。</strong>分辨率明明有 15.55 bit（听起来比 12.23 好），但纹波涨到 1.94 mV<sub>pp</sub>，折算成电流 2.94 mA，是 10 kHz 的 100 倍。真实精度只有 <b>10.73 bit</b>，反而比 10 kHz 差。所以「降低频率换分辨率」这条路，在两级 RC 固定时是走不通的。</p>
   </div>
 
   <h3>5.4 最优点在哪</h3>
-  <p>把两条曲线画在同一张图上，交点大约在 5 kHz：此处分辨率 13.23 bit，纹波刚好压到 0.19 mA（小于一步 0.86 mA），综合精度 0.88 mA 是六档里最好的。10 kHz 用 1.72 mA 换来了更低纹波和两倍于听觉上限的刷新率，是更常见的选择。</p>
+  <p>把两条曲线画在同一张图上，交点大约在 5 kHz：此处分辨率 13.23 bit，纹波压到 0.12 mA（远小于一步 0.52 mA），综合精度 0.53 mA 是六档里最好的。10 kHz 用 1.04 mA 换来了更低纹波和两倍于听觉上限的刷新率，是更常见的选择。</p>
   <ul>
-    <li><b>要精度优先</b>：5 kHz，13.23 bit / 0.88 mA，前提是 5 kHz 不会与摄像头帧率或电源环路打架。</li>
-    <li><b>要响应和低纹波</b>：10~20 kHz，12.23~11.23 bit，1.7~3.4 mA。</li>
+    <li><b>要精度优先</b>：5 kHz，13.23 bit / 0.53 mA，前提是 5 kHz 不会与摄像头帧率或电源环路打架。</li>
+    <li><b>要响应和低纹波</b>：10~20 kHz，12.23~11.23 bit，1.0~2.1 mA。</li>
     <li><b>要绝对避免可见闪烁</b>：>20 kHz，但要接受 11 bit 以下，且需要检查定时器时钟是否够高（N 太小会让 ΔI 上升很快）。</li>
   </ul>
 
   <h3>5.5 选频率的四步</h3>
   <ul class="flow">
-    <li><span class="n">01</span><div><b>定精度需求</b>先把可接受的最小电流步进写下来（例如 2 mA），除以 I<sub>FS</sub> 得到需要的 N。</div></li>
-    <li><span class="n">02</span><div><b>反推频率上限</b>f<sub>PWM</sub> ≤ f<sub>CLK</sub>/N。48 MHz 下要 2 mA 步进（N ≥ 4125），频率就不能超过 11.6 kHz。</div></li>
+    <li><span class="n">01</span><div><b>定精度需求</b>先把可接受的最小电流步进写下来（例如 2 mA），用 I<sub>FS</sub> 除以它得到需要的 N。</div></li>
+    <li><span class="n">02</span><div><b>反推频率上限</b>f<sub>PWM</sub> ≤ f<sub>CLK</sub>/N。48 MHz、I<sub>FS</sub> = 5 A 下要 2 mA 步进，N ≥ 2500，频率就不能超过 19.2 kHz；要 1 mA 步进则 N ≥ 5000，上限 9.6 kHz。</div></li>
     <li><span class="n">03</span><div><b>校核纹波</b>用 4.1 的公式算这个频率下的纹波，确认折算电流小于 1 LSB；不满足就加大 C3/C4。</div></li>
     <li><span class="n">04</span><div><b>校核建立时间</b>6.64τ 必须小于系统的调光刷新周期，否则上一档还没稳就切下一档，画面会"糊"。</div></li>
   </ul>
@@ -447,7 +447,7 @@
       <div class="field"><label for="cc-vpwm">PWM 幅度 (V)</label><input id="cc-vpwm" type="number" step="any" value="3.3"></div>
       <div class="field"><label for="cc-fclk">定时器时钟 (MHz)</label><input id="cc-fclk" type="number" step="any" value="48"></div>
       <div class="field"><label for="cc-fpwm">PWM 频率 (kHz)</label><input id="cc-fpwm" type="number" step="any" value="10"></div>
-      <div class="field"><label for="cc-r6">采样电阻 R6 (mΩ)</label><input id="cc-r6" type="number" step="any" value="20"></div>
+      <div class="field"><label for="cc-r6">采样电阻 R6 (mΩ)</label><input id="cc-r6" type="number" step="any" value="33"></div>
       <div class="field"><label for="cc-g">放大增益 G (V/V)</label><input id="cc-g" type="number" step="any" value="20"></div>
       <div class="field"><label for="cc-r">滤波电阻 R (kΩ)</label><input id="cc-r" type="number" step="any" value="3.74"></div>
       <div class="field"><label for="cc-c">滤波电容 C (µF)</label><input id="cc-c" type="number" step="any" value="2.2"></div>
@@ -490,13 +490,13 @@
     <table>
       <thead><tr><th>误差源</th><th>典型值</th><th>折算电流误差</th><th>占满量程</th></tr></thead>
       <tbody>
-        <tr><td>R6 容差</td><td>1%（1206 厚膜）</td><td>±82.5 mA</td><td><b>1.0%</b>（主导项）</td></tr>
-        <tr><td>INA240A1 增益误差</td><td>±0.2%（25 °C）</td><td>±16.5 mA</td><td>0.2%</td></tr>
-        <tr><td>INA240 失调</td><td>±25 µV（RTI）</td><td>±1.25 mA</td><td>0.015%</td></tr>
-        <tr><td>OPA330 失调</td><td>±25 µV</td><td>±62.5 µA</td><td>0.00076%</td></tr>
+        <tr><td>R6 容差</td><td>1%（2512 厚膜）</td><td>±50 mA</td><td><b>1.0%</b>（主导项）</td></tr>
+        <tr><td>INA240A1 增益误差</td><td>±0.2%（25 °C）</td><td>±10 mA</td><td>0.2%</td></tr>
+        <tr><td>INA240 失调</td><td>±25 µV（RTI）</td><td>±0.76 mA</td><td>0.015%</td></tr>
+        <tr><td>OPA330 失调</td><td>±25 µV</td><td>±38 µA</td><td>0.00076%</td></tr>
         <tr><td>FB 基准误差</td><td>±1%</td><td>影响 V<sub>OUT</sub>，被电流环抑制</td><td>≈0</td></tr>
         <tr><td>R8/R10/R9 容差</td><td>1%</td><td>影响调节范围，被环路抑制</td><td>≈0</td></tr>
-        <tr><td><b>RSS 合计</b></td><td>—</td><td>±84 mA</td><td><b>≈1.0%</b></td></tr>
+        <tr><td><b>RSS 合计</b></td><td>—</td><td>±51 mA</td><td><b>≈1.0%</b></td></tr>
       </tbody>
     </table>
   </div>
@@ -510,13 +510,13 @@
       <tbody>
         <tr>
           <td>R6 功耗</td>
-          <td>I²R = 8.25² × 0.02 = 1.36 W（1206 额定 1 W）</td>
-          <td>超额定 36%，需换 2 W 或两只 0.04 Ω 并联</td>
+          <td>I²R = 5² × 0.033 = 0.83 W（2512 额定 1 W）</td>
+          <td>占额定 82%，不超但余量紧；建议两只 0.066 Ω 并联（各 0.41 W）或选 2 W 规格</td>
         </tr>
         <tr>
           <td>INA240 输出摆幅</td>
-          <td>8.25 A × 0.4 V/A = 3.3 V，供电 3.3 V，轨限约 3.1 V</td>
-          <td>满量程撞轨，可用上限约 7.7 A</td>
+          <td>5 A × 0.66 V/A = 3.3 V，供电 3.3 V，轨限约 3.1 V</td>
+          <td>超出 0.2 V，可用上限 4.70 A（94%）；软件限 D<sub>max</sub> 或改 R6 = 0.030 Ω</td>
         </tr>
         <tr>
           <td>运放输出范围</td>
@@ -525,16 +525,21 @@
         </tr>
         <tr>
           <td>buck 输出能力</td>
-          <td>3.19 V × 8.25 A = 26.3 W，TPS6286A06 额定 6 A</td>
-          <td>电流已超 buck 能力，需确认实际负载不是 8 A</td>
+          <td>3.19 V × 5 A = 16.0 W，TPS6286A06 额定 6 A</td>
+          <td>83% 额定负载，余量够用</td>
         </tr>
       </tbody>
     </table>
   </div>
 
+  <div class="callout">
+    <span class="ico">→</span>
+    <p><strong>满量程改成 5 A 之后，原来那条「6 A 器件带 8.25 A」的冲突自动消失了</strong>：buck 现在只跑到 83% 额定。剩下两个小项——R6 的 82% 降额和 INA240 的 6% 轨限缺口——都属于布局阶段能处理掉的程度，不再是架构问题。</p>
+  </div>
+
   <div class="callout warn">
     <span class="ico">!</span>
-    <p><strong>最后一行的冲突值得回头核对：</strong>TPS6286A06 是 6 A 器件，而按 V<sub>PWM</sub> = 3.3 V、G = 20、R6 = 0.02 Ω 推出来的满量程是 8.25 A。要么实际 LED 电流小于 6 A（即 PWM 满占空比不代表满电流），要么采样链的增益另有安排。<b>请以实际负载电流为准</b>，把 5.3 表里的 I<sub>FS</sub> 换成真实值再算步进电流。</p>
+    <p><strong>如果板子上 R6 仍然是 0.02 Ω：</strong>那 G·R<sub>6</sub> = 0.4 V/A，3.3 V 满占空比对应的是 8.25 A，5 A 只用到 2.0 V（D<sub>max</sub> = 60.6%）。此时 LSB 仍是 8.25/4800 = 1.72 mA，但可调范围只有 5 A，<b>等效全范围分辨率降到 log<sub>2</sub>(5 A / 1.72 mA) = 11.5 bit</b>，比改 R6 的方案少 0.7 bit。两种接法都能跑 5 A，改 R6 更划算，代价是重画一版采样电阻并复核 R3/C12 的滤波。</p>
   </div>
 </section>
 
@@ -543,7 +548,7 @@
   <h2>第 8 章 设计校核清单</h2>
   <p>打印出来逐条勾。</p>
   <ul class="doc-check">
-    <li>☐ 采样电阻 R6 的功耗按最大电流算过，并留了 50% 降额</li>
+    <li>☐ 采样电阻 R6 的功耗按最大电流算过，并留了 50% 降额（本例 5 A 下 0.83 W / 2512 的 1 W，只有 18% 余量，需并联）</li>
     <li>☐ INA240 的共模范围覆盖 LED 回路最高电位（含短路到 BAT+ 的工况）</li>
     <li>☐ INA240 输出在最坏电流下不撞供电轨（留 0.2 V 余量）</li>
     <li>☐ 运放两个输入极性检查过：扰动一圈回到负号</li>
