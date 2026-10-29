@@ -548,6 +548,17 @@
     <span class="ico">→</span>
     <p><strong>唯一要盯住的是 PWM 信号源的幅度。</strong>满量程 = K · V<sub>PWM</sub>，现在 2.0 V 对应 5 A；若日后 PWM 换成 3.0 V 或 3.3 V 域直出，满量程会变成 7.5 A / 8.25 A，超出 TPS6286A06 的 6 A 能力，100% 时 R6 功耗和 INA240 轨限也都要重核。换 MCU、改电平或动信号链时，先复核这个乘积。</p>
   </div>
+
+  <h3>7.2 输入电压余量（dropout）校核——实测踩过的坑</h3>
+  <p>恒流环再强，也只能指挥 buck 在"它给得出来的电压"范围内工作。buck 只能降压，输出上限也不是理想公式 D×V<sub>IN</sub>，而是要扣掉电流路径上所有电阻的压降：</p>
+  <div class="eq">
+    <div>V<sub>OUT,max</sub> = V<sub>IN</sub> − I × (R<sub>DS(on)·HS</sub> + DCR<sub>L1</sub> + R<sub>PCB</sub>)</div>
+  </div>
+  <p>实测案例：V<sub>IN</sub> = 3.6 V 时命令满量程，电流顶在 <b>4 A</b>、V<sub>OUT</sub> 卡在 <b>3.4 V</b>——反推路径电阻 ≈ (3.6 − 3.4)/4 = <b>50 mΩ</b>（高侧管导通电阻 + 电感 DCR + PCB 走线，量级合理）。5 A 时可用电压只剩 3.6 − 5×0.05 ≈ <b>3.35 V</b>，而 LED 走 5 A 需要 V<sub>f</sub>(5 A) + 0.1 V ≈ 3.55 V（按 LED 动态电阻 0.1~0.15 Ω 估算），差约 0.2 V，电流就停在 LED I-V 曲线与可用电压的交点上。LED 的 di/dV 很陡，<b>0.2 V 的电压缺口就是 1 A 的电流差</b>。这不是环路故障——FB 此时始终低于 0.6 V 基准，buck 已维持最大导通，环路"还想再推"但功率级给不出来。电池放电末端（3.2 V）会更严重：可用电压 3.0 V 左右，电流可能只剩 2~3 A。满量程 5 A 本质上只在电池高电量区间可达，这是 buck 拓扑"只能降压"的固有属性。</p>
+  <div class="callout">
+    <span class="ico">→</span>
+    <p><strong>校核条件写进设计规则：</strong>V<sub>IN,min</sub> ≥ V<sub>f</sub>(I<sub>max</sub>) + I<sub>max</sub> × (R6 + R<sub>DS(on)</sub> + DCR + R<sub>PCB</sub>)，并留 0.3~0.5 V 余量。达不到时的解法：① 按最低电池电压下的可达电流定义满量程并逐点标定；② 压低路径电阻（加粗走线、选低 DCR 电感、必要时两颗电感并联）；③ 换 buck-boost 或提高 V<sub>IN</sub>。固件建议检测"命令满量程但电流到不了"的状态并上报，否则用户端表现为最大亮度随电量漂移。</p>
+  </div>
 </section>
 
 <section class="chap" id="ch8">
@@ -567,6 +578,7 @@
     <li>☐ 调光刷新率低于 1/(6.64τ)，否则上层刷新快于环路响应</li>
     <li>☐ 最低亮度下测过运放失调的影响（小电流时占比最大）</li>
     <li>☐ EN_MOON 关断时，LED 电流确实归零且无反向漏电</li>
+    <li>☐ dropout 校核：最低电池电压下，V<sub>IN</sub> − I<sub>max</sub>×(R<sub>DS(on)</sub>+DCR+走线) 仍 ≥ V<sub>f</sub>(I<sub>max</sub>) + I<sub>max</sub>×R6，留 0.3 V 以上余量（实测 3.6 V 输入时 5 A 命令只能到 4 A，见 7.2）</li>
   </ul>
 </section>
 
