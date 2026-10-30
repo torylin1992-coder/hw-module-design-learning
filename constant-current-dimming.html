@@ -570,6 +570,47 @@
     <span class="ico">→</span>
     <p><strong>校核条件写进设计规则：</strong>V<sub>IN,min</sub> ≥ V<sub>f</sub>(I<sub>max</sub>) + I<sub>max</sub> × (R6 + R<sub>DS(on)</sub> + DCR + R<sub>PCB</sub>)，并留 0.3~0.5 V 余量。达不到时的解法：① 按最低电池电压下的可达电流定义满量程并逐点标定；② 压低路径电阻（加粗走线、选低 DCR 电感、必要时两颗电感并联）；③ 换 buck-boost 或提高 V<sub>IN</sub>。固件建议检测"命令满量程但电流到不了"的状态并上报，否则用户端表现为最大亮度随电量漂移。</p>
   </div>
+
+  <h3>7.4 低电流工况的"软 dropout"：同一个命令，4 V 出 950 mA、3.4 V 只剩 770 mA</h3>
+  <p>把电子负载换成真 LED 之后又抓到一次：命令相同（D ≈ 19%，V<sub>DIM</sub> ≈ 0.38 V），V<sub>IN</sub> = 4.0 V 时电流 <b>950 mA</b>（正常），V<sub>IN</sub> 降到 3.4 V 只剩 <b>770 mA</b>，掉了 18.9%。<b>这不是精度问题，也不是环路问题</b>，而是 7.2/7.3 那个"想推推不动"的指纹，只是这次发生在 1 A 量级，主角换了人。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>量</th><th>V<sub>IN</sub> = 4.0 V</th><th>V<sub>IN</sub> = 3.4 V</th><th>判读</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>命令 V<sub>DIM</sub></td><td>0.38 V（D ≈ 19%）</td><td>0.38 V</td><td>指令没变</td></tr>
+        <tr><td>V<sub>+</sub>（INA240 输出）</td><td>0.380 V</td><td><b>0.308 V</b></td><td>= 0.4 V/A × I<sub>LED</sub>，如实反映电流</td></tr>
+        <tr><td>V<sub>−</sub>（设定）</td><td>0.380 V</td><td>0.380 V</td><td>指令端不动</td></tr>
+        <tr><td>V<sub>+</sub> − V<sub>−</sub></td><td>0 mV</td><td><b>−72 mV</b></td><td>远超失调，运放<b>贴低轨（V<sub>OA</sub> ≈ 0 V）</b></td></tr>
+        <tr><td>I<sub>LED</sub></td><td><b>950 mA</b></td><td><b>770 mA</b></td><td>差 180 mA = 18.9%</td></tr>
+        <tr><td>环路状态</td><td>平衡（在调节）</td><td>饱和（掉出调节）</td><td>故障性质 = 限幅，不是精度</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><b>和 5 A 那个案例的关键区别：主角从"路径压降"换成了"最大占空比"。</b>5 A 时 I×R<sub>path</sub> = 5 × 50 mΩ = 0.25 V，路径压降是主角；1 A 时只有 0.95 × 50 mΩ = <b>47 mV</b>，小到可以忽略。此时卡住的是 buck 的占空比上限——它<b>永远到不了 100%</b>，因为高侧管每周期必须关断一段时间给自举电容充电（最小关断时间 t<sub>off,min</sub>）：</p>
+  <div class="eq">
+    <div>D<sub>max</sub> = 1 − t<sub>off,min</sub> × f<sub>SW</sub>　　⇒　V<sub>OUT,max</sub> = D<sub>max</sub> × V<sub>IN</sub> − I × R<sub>path</sub></div>
+    <div class="note">f<sub>SW</sub> = 2.4 MHz 时周期 417 ns；t<sub>off,min</sub> 取 20~40 ns → <b>D<sub>max</sub> ≈ 90%~95%</b>。V<sub>IN</sub> = 3.4 V 时 V<sub>OUT</sub> 最多只能到 <b>3.07~3.24 V</b>，而不是想当然的 3.4 V。</div>
+  </div>
+  <p><b>为什么 180 mA 只对应几十毫伏的缺口。</b>LED 的 I-V 曲线在额定点附近近似线性，斜率为动态电阻的倒数：</p>
+  <div class="eq">
+    <div>ΔI = ΔV / (R<sub>d</sub> + R<sub>path</sub>)，R<sub>d</sub> ≈ 0.2~0.35 Ω ⇒ dI/dV ≈ <b>3~5 A/V</b></div>
+    <div class="note">实测 180 mA 对应 ΔV = 0.18 × (0.28 + 0.05) ≈ <b>50~70 mV</b>。也就是说输入电压只低了 0.6 V（−15%），但真正"缺"的只是这 60 mV 的余量——却换走了近 20% 的电流。</div>
+  </div>
+  <p>这也解释了为什么这个现象<strong>看起来像阈值</strong>：4.0 V 时 D = 3.3/4.0 ≈ 82%，离 D<sub>max</sub> 还有十几个点余量，环路从容调节；一旦 V<sub>IN</sub> 逼近 V<sub>OUT</sub>/D<sub>max</sub>，占空比顶死，多出来的需求全部转成电流缺口，而 LED 的陡斜率把这个缺口放大成"断崖"。<b>一个百分点的输入电压（34 mV）就能吃掉 15~20% 的电流</b>。</p>
+  <div class="callout warn">
+    <span class="ico">!</span>
+    <p><strong>7.2 那条校核式在低电流时会低估需求，必须补上 D<sub>max</sub> 这一项：</strong>V<sub>IN,min</sub> ≥ [V<sub>f</sub>(I<sub>max</sub>) + I<sub>max</sub> × R<sub>path</sub>] / D<sub>max</sub>。① 5 A 工况：3.55 / 0.93 = <b>3.82 V</b>——和简式算出的 3.80 V 差不多，因为路径压降恰好抵掉了占空比罚金；② 0.95 A 工况：3.30 / 0.93 = <b>3.55 V</b>，而简式只给 3.35 V，<b>低估了 0.2 V</b>。电流越小，R<sub>path</sub> 项越不重要，D<sub>max</sub> 项越成为唯一的主导——这正是本例踩到的坑。</p>
+  </div>
+  <div class="callout">
+    <span class="ico">→</span>
+    <p><strong>三个测量可以一次确认（按顺序）：</strong>① V<sub>OA</sub>——应为 0 V 附近，贴低轨即证实饱和；② V<sub>OUT</sub>——若 ≈3.1~3.2 V 且明显低于 V<sub>IN</sub>，是占空比顶死；若 ≈3.38 V（几乎等于 V<sub>IN</sub> − 47 mV），说明芯片支持 100% 占空比模式、限制在别处，要重算；③ SW 节点——看占空比是否顶在 90~95% 不动、且每周期都有关断脉冲。</p>
+  </div>
+  <div class="callout">
+    <span class="ico">→</span>
+    <p><strong>这个工况下的解法（注意：压路径电阻在这里没用）：</strong>① <b>降开关频率</b>——若芯片支持 1.2 MHz，t<sub>off,min</sub> 占比减半，D<sub>max</sub> 从 ~93% 提到 ~96%，直接还回约 0.1 V 余量，是最便宜的改动；② <b>确认芯片有没有 100% 占空比（dropout）模式</b>——部分 buck 在 FB 跌落时会让高侧管常通，有就打开；③ <b>降低 LED 串的 V<sub>f</sub></b>（少串一颗或换低 V<sub>f</sub> 型号）——3.4 V 输入想跑满 5 A，LED 串工作点本就必须压到 3.0 V 以下；④ <b>换 buck-boost</b>，从根上解决；⑤ 系统层：按 V<sub>IN</sub> 做电流补偿曲线，或规定"低于 3.7 V 自动降额"并在 UI 上体现。<b>加粗走线、换低 DCR 电感在本例几乎无效</b>——1 A 下路径压降只有 47 mV。</p>
+  </div>
 </section>
 
 <section class="chap" id="ch8">
@@ -589,7 +630,7 @@
     <li>☐ 调光刷新率低于 1/(6.64τ)，否则上层刷新快于环路响应</li>
     <li>☐ 最低亮度下测过运放失调的影响（小电流时占比最大）</li>
     <li>☐ EN_MOON 关断时，LED 电流确实归零且无反向漏电</li>
-    <li>☐ dropout 校核：最低电池电压下，V<sub>IN</sub> − I<sub>max</sub>×(R<sub>DS(on)</sub>+DCR+走线) 仍 ≥ V<sub>f</sub>(I<sub>max</sub>) + I<sub>max</sub>×R6，留 0.3 V 以上余量（实测 3.6 V 输入时 5 A 命令只能到 4 A，见 7.2）</li>
+    <li>☐ dropout 校核用 <b>D<sub>max</sub></b>（最小关断时间决定，2.4 MHz 下约 90~95%），不是 100%：V<sub>IN,min</sub> ≥ [ V<sub>f</sub>(I<sub>max</sub>) + I<sub>max</sub> × ( R6 + R<sub>DS(on)</sub> + DCR + 走线 ) ] / D<sub>max</sub>，再留 0.3 V 以上余量（实测：3.6 V 输入下 5 A 命令只到 4 A；3.4 V 输入下 0.95 A 命令只到 0.77 A——见 7.2 / 7.4）</li>
     <li>☐ 指令上限校核：注入方程 V<sub>OUT</sub> = 上限 − 斜率×V<sub>OA</sub> 的"上限"要高于 5 A 所需电压 0.2 V 以上（实测 3.49 V 上限把电流卡在 4 A，抬到 3.8 V 解决，见 7.3）</li>
     <li>☐ 抬过指令上限后：范围下限仍覆盖最低亮度、buck 的 V<sub>OUT</sub> 规格允许、输入电流余量 ≥ 20%（见 7.3）</li>
   </ul>
